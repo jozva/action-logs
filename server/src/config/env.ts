@@ -33,6 +33,11 @@ const envSchema = z.object({
     .positive()
     .max(10_000)
     .default(10_000),
+  [ENV_KEYS.JWT_SECRET]: z
+    .string()
+    .min(32, 'JWT_SECRET must be at least 32 characters')
+    .default('gidy-dev-jwt-secret-change-me-32chars'),
+  [ENV_KEYS.JWT_EXPIRES_IN]: z.string().default('8h'),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -59,6 +64,8 @@ export const env = {
   uploadRateLimitMax: data.UPLOAD_RATE_LIMIT_MAX,
   bodyLimit: data.BODY_LIMIT,
   uploadMaxRecords: data.UPLOAD_MAX_RECORDS,
+  jwtSecret: data.JWT_SECRET,
+  jwtExpiresIn: data.JWT_EXPIRES_IN,
 } as const;
 
 export type AppEnv = typeof env;

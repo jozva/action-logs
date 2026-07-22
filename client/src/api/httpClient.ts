@@ -49,12 +49,34 @@ export const httpClient: AxiosInstance = axios.create({
   },
 })
 
+httpClient.interceptors.request.use((config) => {
+  const raw = localStorage.getItem('gidy-auth-session')
+  if (!raw) {
+    return config
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as { state?: { token?: string } }
+    const token = parsed.state?.token
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+  } catch {
+    // ignore malformed persisted auth
+  }
+
+  return config
+})
+
 httpClient.interceptors.response.use(
   (response) => response,
   (error: unknown) => {
     const normalized = extractError(error)
     if (normalized.status === 429) {
       toast.error('Rate limit exceeded. Please wait and retry.')
+    }
+    if (normalized.status === 401) {
+      localStorage.removeItem('gidy-auth-session')
     }
     return Promise.reject(normalized)
   },

@@ -1,11 +1,7 @@
 import type { NextFunction, Request, RequestHandler, Response } from 'express';
 import type { ZodTypeAny } from 'zod';
 
-import type { ExecuteActionInput } from '../validators/actionValidators.js';
-import type {
-  BulkUploadBody,
-  ListLogsQuery,
-} from '../validators/logValidators.js';
+import type { ListLogsQuery } from '../validators/logValidators.js';
 
 interface ValidationSchemas {
   body?: ZodTypeAny;
@@ -17,9 +13,7 @@ export function validateRequest(schemas: ValidationSchemas): RequestHandler {
   return (req: Request, _res: Response, next: NextFunction) => {
     try {
       if (schemas.body) {
-        const parsed = schemas.body.parse(req.body) as
-          | BulkUploadBody
-          | ExecuteActionInput;
+        const parsed: unknown = schemas.body.parse(req.body);
         req.body = parsed;
         req.validatedBody = parsed;
       }

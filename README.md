@@ -196,8 +196,23 @@ Envelope:
 | `GET` | `/api/v1/logs/summary` | Dashboard aggregates |
 | `GET` | `/api/v1/logs/:id` | Single log |
 | `POST` | `/api/v1/logs/upload` | Bulk upload (`records[]`, max 10,000) |
-| `GET` | `/api/v1/actions` | Employee action catalog (severity/status policy) |
-| `POST` | `/api/v1/actions` | Execute employee action and create audit log |
+| `POST` | `/api/v1/auth/register` | Create employee account (`user` role) |
+| `POST` | `/api/v1/auth/login` | Login and receive JWT |
+| `GET` | `/api/v1/auth/me` | Current authenticated user |
+| `POST` | `/api/v1/auth/logout` | Logout (audited) |
+| `GET/POST/PATCH/DELETE` | `/api/v1/users` | Role-gated user management |
+| `GET/POST` | `/api/v1/files` | File list/upload (audited) |
+| `POST` | `/api/v1/files/:id/download` | Authorize download (audited) |
+| `POST` | `/api/v1/exports` | Create data export (audited) |
+| `GET/PATCH` | `/api/v1/policies` | Read/update security policies (audited) |
+
+### Demo admin
+
+```bash
+cd server && npm run seed:admin
+```
+
+Default credentials: `admin@company.com` / `Admin123!`
 
 ### List query parameters
 

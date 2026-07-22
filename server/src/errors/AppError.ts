@@ -32,6 +32,20 @@ export class BadRequestError extends AppError {
   }
 }
 
+export class UnauthorizedError extends AppError {
+  constructor(message = 'Authentication required', details?: ErrorDetails) {
+    super(message, HTTP_STATUS.UNAUTHORIZED, 'UNAUTHORIZED', details);
+    this.name = 'UnauthorizedError';
+  }
+}
+
+export class ForbiddenError extends AppError {
+  constructor(message = 'Forbidden', details?: ErrorDetails) {
+    super(message, HTTP_STATUS.FORBIDDEN, 'FORBIDDEN', details);
+    this.name = 'ForbiddenError';
+  }
+}
+
 export class NotFoundError extends AppError {
   constructor(message = 'Resource not found', details?: ErrorDetails) {
     super(message, HTTP_STATUS.NOT_FOUND, 'NOT_FOUND', details);

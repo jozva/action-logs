@@ -1,8 +1,12 @@
-import { Activity, Menu, ShieldCheck, Upload, Users } from 'lucide-react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { Activity, LogIn, LogOut, Menu, ShieldCheck, Upload, Users } from 'lucide-react'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 
+import { logoutRequest } from '@/api/authApi'
+import { ApiRequestError } from '@/api/httpClient'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { useAuthStore } from '@/stores/authStore'
 import { useUiStore } from '@/stores/uiStore'
 
 const navItems = [
@@ -12,7 +16,25 @@ const navItems = [
 ]
 
 export function AppShell() {
+  const navigate = useNavigate()
   const { sidebarCollapsed, toggleSidebar } = useUiStore()
+  const { user, token, clearSession } = useAuthStore()
+
+  const handleLogout = async () => {
+    try {
+      if (token) {
+        await logoutRequest()
+      }
+    } catch (error) {
+      if (!(error instanceof ApiRequestError && error.status === 401)) {
+        toast.error(error instanceof ApiRequestError ? error.message : 'Logout failed')
+      }
+    } finally {
+      clearSession()
+      toast.success('Signed out')
+      navigate('/login')
+    }
+  }
 
   return (
     <div className="flex min-h-screen">
@@ -56,7 +78,18 @@ export function AppShell() {
         </nav>
 
         <div className="border-t border-white/10 p-3 text-xs text-sidebar-muted">
-          {!sidebarCollapsed ? <p>Server-side query console</p> : <p className="text-center">v1</p>}
+          {!sidebarCollapsed ? (
+            user ? (
+              <div className="space-y-1">
+                <p className="truncate font-medium text-sidebar-foreground">{user.name}</p>
+                <p className="truncate">{user.role}</p>
+              </div>
+            ) : (
+              <p>Sign in for employee actions</p>
+            )
+          ) : (
+            <p className="text-center">v1</p>
+          )}
         </div>
       </aside>
 
@@ -82,17 +115,32 @@ export function AppShell() {
                 </h1>
               </div>
             </div>
-            <div className="flex items-center gap-2 md:hidden">
-              {navItems.map((item) => (
-                <NavLink key={item.to} to={item.to} end={item.to === '/'}>
-                  {({ isActive }) => (
-                    <Button variant={isActive ? 'default' : 'outline'} size="sm">
-                      <item.icon className="h-3.5 w-3.5" />
-                      {item.label}
-                    </Button>
-                  )}
-                </NavLink>
-              ))}
+
+            <div className="flex items-center gap-2">
+              <div className="hidden items-center gap-2 md:flex">
+                {navItems.map((item) => (
+                  <NavLink key={item.to} to={item.to} end={item.to === '/'}>
+                    {({ isActive }) => (
+                      <Button variant={isActive ? 'default' : 'outline'} size="sm">
+                        <item.icon className="h-3.5 w-3.5" />
+                        {item.label}
+                      </Button>
+                    )}
+                  </NavLink>
+                ))}
+              </div>
+
+              {user ? (
+                <Button variant="outline" size="sm" onClick={() => void handleLogout()}>
+                  <LogOut className="h-3.5 w-3.5" />
+                  Logout
+                </Button>
+              ) : (
+                <Button size="sm" onClick={() => navigate('/login')}>
+                  <LogIn className="h-3.5 w-3.5" />
+                  Login
+                </Button>
+              )}
             </div>
           </div>
         </header>

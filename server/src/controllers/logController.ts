@@ -4,13 +4,18 @@ import { HTTP_STATUS } from '../constants/http.js';
 import { BadRequestError } from '../errors/AppError.js';
 import * as logService from '../services/logService.js';
 import { sendSuccess } from '../utils/apiResponse.js';
+import type {
+  BulkUploadBody,
+  ListLogsQuery,
+} from '../validators/logValidators.js';
 
 export async function listLogs(req: Request, res: Response): Promise<Response> {
-  if (!req.validatedQuery) {
+  const query = req.validatedQuery as ListLogsQuery | undefined;
+  if (!query) {
     throw new BadRequestError('Missing validated query');
   }
 
-  const result = await logService.listLogs(req.validatedQuery);
+  const result = await logService.listLogs(query);
   return sendSuccess(
     res,
     result.items,
@@ -42,8 +47,8 @@ export async function bulkUploadLogs(
   req: Request,
   res: Response,
 ): Promise<Response> {
-  const body = req.validatedBody;
-  if (!body || !('records' in body)) {
+  const body = req.validatedBody as BulkUploadBody | undefined;
+  if (!body?.records) {
     throw new BadRequestError('Missing upload records');
   }
 
