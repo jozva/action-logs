@@ -3,47 +3,49 @@ export const ACTOR_ROLES = [
   'user',
   'viewer',
   'service',
-  'api',
+  'auditor',
 ] as const;
 
 export const SEVERITIES = [
-  'critical',
-  'high',
-  'medium',
-  'low',
-  'info',
+  'CRITICAL',
+  'HIGH',
+  'MEDIUM',
+  'LOW',
+  'INFO',
 ] as const;
 
 export const LOG_STATUSES = [
-  'success',
-  'failure',
-  'pending',
-  'blocked',
+  'Unresolved',
+  'Investigating',
+  'Resolved',
+  'Dismissed',
 ] as const;
 
 export const RESOURCE_TYPES = [
-  'user',
-  'file',
-  'api_key',
-  'database',
-  'bucket',
-  'server',
-  'policy',
-  'session',
+  'USER',
+  'FILE',
+  'API_KEY',
+  'DATABASE',
+  'BUCKET',
+  'SERVER',
+  'POLICY',
+  'SESSION',
 ] as const;
 
 export const ACTIONS = [
-  'login',
-  'logout',
-  'create',
-  'read',
-  'update',
-  'delete',
-  'upload',
-  'download',
-  'export',
-  'configure',
-  'access_denied',
+  'LOGIN',
+  'LOGOUT',
+  'CREATE_USER',
+  'UPDATE_USER',
+  'DELETE_USER',
+  'READ_RESOURCE',
+  'UPDATE_RESOURCE',
+  'DELETE_RESOURCE',
+  'UPLOAD_FILE',
+  'DOWNLOAD_FILE',
+  'EXPORT_DATA',
+  'CONFIGURE_POLICY',
+  'ACCESS_DENIED',
 ] as const;
 
 export const LOG_SORT_FIELDS = [
@@ -52,7 +54,7 @@ export const LOG_SORT_FIELDS = [
   'status',
   'action',
   'region',
-  'actor.name',
+  'actor',
   'createdAt',
 ] as const;
 

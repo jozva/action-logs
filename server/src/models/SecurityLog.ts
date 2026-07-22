@@ -8,35 +8,32 @@ import {
   SEVERITIES,
 } from '../constants/logs.js';
 
-const actorSchema = new Schema(
-  {
-    id: { type: String, required: true, trim: true, maxlength: 128 },
-    name: { type: String, required: true, trim: true, maxlength: 128 },
-    email: { type: String, required: true, trim: true, lowercase: true, maxlength: 254 },
-    role: { type: String, required: true, enum: ACTOR_ROLES },
-  },
-  { _id: false },
-);
-
-const resourceSchema = new Schema(
-  {
-    type: { type: String, required: true, enum: RESOURCE_TYPES },
-    id: { type: String, required: true, trim: true, maxlength: 128 },
-    name: { type: String, required: true, trim: true, maxlength: 256 },
-  },
-  { _id: false },
-);
-
+/**
+ * Flat audit-log document matching the assignment contract:
+ * actor, role, action, resource, resourceType, ipAddress, region, severity, status, timestamp
+ */
 const securityLogSchema = new Schema(
   {
-    actor: { type: actorSchema, required: true },
-    action: { type: String, required: true, enum: ACTIONS },
-    resource: { type: resourceSchema, required: true },
+    actor: {
+      type: String,
+      required: true,
+      trim: true,
+      lowercase: true,
+      maxlength: 254,
+    },
+    role: { type: String, required: true, enum: ACTOR_ROLES, index: true },
+    action: { type: String, required: true, enum: ACTIONS, index: true },
+    resource: { type: String, required: true, trim: true, maxlength: 512 },
+    resourceType: {
+      type: String,
+      required: true,
+      enum: RESOURCE_TYPES,
+      index: true,
+    },
+    ipAddress: { type: String, required: true, trim: true, maxlength: 64 },
+    region: { type: String, required: true, trim: true, maxlength: 64, index: true },
     severity: { type: String, required: true, enum: SEVERITIES, index: true },
     status: { type: String, required: true, enum: LOG_STATUSES, index: true },
-    ip: { type: String, required: true, trim: true, maxlength: 64 },
-    region: { type: String, required: true, trim: true, maxlength: 64, index: true },
-    userAgent: { type: String, trim: true, maxlength: 512, default: '' },
     timestamp: { type: Date, required: true, index: true },
   },
   {
@@ -55,34 +52,30 @@ const securityLogSchema = new Schema(
 
 securityLogSchema.index({ timestamp: -1, severity: 1 });
 securityLogSchema.index({ status: 1, timestamp: -1 });
-securityLogSchema.index({ 'actor.role': 1, timestamp: -1 });
+securityLogSchema.index({ role: 1, timestamp: -1 });
 securityLogSchema.index({ action: 1, timestamp: -1 });
-securityLogSchema.index({ 'resource.type': 1, timestamp: -1 });
+securityLogSchema.index({ resourceType: 1, timestamp: -1 });
 securityLogSchema.index({ region: 1, timestamp: -1 });
 securityLogSchema.index({ createdAt: -1 });
 
 securityLogSchema.index(
   {
-    'actor.name': 'text',
-    'actor.email': 'text',
+    actor: 'text',
     action: 'text',
-    'resource.name': 'text',
-    'resource.id': 'text',
-    ip: 'text',
+    resource: 'text',
+    ipAddress: 'text',
     region: 'text',
     status: 'text',
   },
   {
     name: 'security_logs_text_search',
     weights: {
-      'actor.name': 8,
-      'actor.email': 6,
-      action: 5,
-      'resource.name': 5,
-      ip: 4,
+      actor: 8,
+      action: 6,
+      resource: 5,
+      ipAddress: 4,
       region: 3,
       status: 2,
-      'resource.id': 2,
     },
   },
 );

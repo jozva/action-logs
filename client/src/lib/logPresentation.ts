@@ -2,15 +2,15 @@ import type { LogStatus, Severity } from '@/constants/logs'
 
 export function severityBadgeVariant(severity: Severity) {
   switch (severity) {
-    case 'critical':
+    case 'CRITICAL':
       return 'critical' as const
-    case 'high':
+    case 'HIGH':
       return 'high' as const
-    case 'medium':
+    case 'MEDIUM':
       return 'medium' as const
-    case 'low':
+    case 'LOW':
       return 'low' as const
-    case 'info':
+    case 'INFO':
       return 'info' as const
     default:
       return 'default' as const
@@ -19,14 +19,14 @@ export function severityBadgeVariant(severity: Severity) {
 
 export function statusBadgeVariant(status: LogStatus) {
   switch (status) {
-    case 'success':
+    case 'Resolved':
       return 'success' as const
-    case 'failure':
+    case 'Unresolved':
       return 'danger' as const
-    case 'blocked':
-      return 'critical' as const
-    case 'pending':
+    case 'Investigating':
       return 'warning' as const
+    case 'Dismissed':
+      return 'muted' as const
     default:
       return 'muted' as const
   }

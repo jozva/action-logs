@@ -8,13 +8,14 @@ type LogFilter = Record<string, unknown>;
 
 const LIST_PROJECTION = {
   actor: 1,
+  role: 1,
   action: 1,
   resource: 1,
+  resourceType: 1,
+  ipAddress: 1,
+  region: 1,
   severity: 1,
   status: 1,
-  ip: 1,
-  region: 1,
-  userAgent: 1,
   timestamp: 1,
   createdAt: 1,
   updatedAt: 1,
@@ -40,24 +41,12 @@ function buildSort(
 export function buildLogFilter(query: ListLogsQuery): LogFilter {
   const filter: LogFilter = {};
 
-  if (query.role) {
-    filter['actor.role'] = query.role;
-  }
-  if (query.severity) {
-    filter.severity = query.severity;
-  }
-  if (query.status) {
-    filter.status = query.status;
-  }
-  if (query.action) {
-    filter.action = query.action;
-  }
-  if (query.resourceType) {
-    filter['resource.type'] = query.resourceType;
-  }
-  if (query.region) {
-    filter.region = query.region;
-  }
+  if (query.role) filter.role = query.role;
+  if (query.severity) filter.severity = query.severity;
+  if (query.status) filter.status = query.status;
+  if (query.action) filter.action = query.action;
+  if (query.resourceType) filter.resourceType = query.resourceType;
+  if (query.region) filter.region = query.region;
 
   if (query.dateFrom || query.dateTo) {
     filter.timestamp = {
@@ -71,12 +60,10 @@ export function buildLogFilter(query: ListLogsQuery): LogFilter {
     const escaped = escapeRegex(search);
     const regex = new RegExp(escaped, 'i');
     filter.$or = [
-      { 'actor.name': regex },
-      { 'actor.email': regex },
+      { actor: regex },
       { action: regex },
-      { 'resource.name': regex },
-      { 'resource.id': regex },
-      { ip: regex },
+      { resource: regex },
+      { ipAddress: regex },
       { region: regex },
       { status: regex },
     ];
@@ -85,9 +72,12 @@ export function buildLogFilter(query: ListLogsQuery): LogFilter {
   return filter;
 }
 
-export async function findLogs(
-  query: ListLogsQuery,
-): Promise<ListLogsResult> {
+function mapLogDocument(item: { _id: unknown } & Record<string, unknown>) {
+  const { _id, ...rest } = item;
+  return { id: String(_id), ...rest };
+}
+
+export async function findLogs(query: ListLogsQuery): Promise<ListLogsResult> {
   const filter = buildLogFilter(query);
   const sort = buildSort(query.sortBy, query.sortOrder);
   const skip = (query.page - 1) * query.pageSize;
@@ -104,10 +94,9 @@ export async function findLogs(
   ]);
 
   return {
-    items: items.map((item) => {
-      const { _id, ...rest } = item as { _id: unknown } & Record<string, unknown>;
-      return { id: String(_id), ...rest };
-    }),
+    items: items.map((item) =>
+      mapLogDocument(item as { _id: unknown } & Record<string, unknown>),
+    ),
     total,
   };
 }
@@ -122,8 +111,7 @@ export async function findLogById(id: string): Promise<Record<string, unknown> |
     return null;
   }
 
-  const { _id, ...rest } = item as { _id: unknown } & Record<string, unknown>;
-  return { id: String(_id), ...rest };
+  return mapLogDocument(item as { _id: unknown } & Record<string, unknown>);
 }
 
 const BULK_INSERT_CHUNK_SIZE = 1_000;

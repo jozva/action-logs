@@ -125,21 +125,40 @@ gidy/
 
 Collection: `security_logs`
 
+Matches the assignment contract (flat document):
+
+```json
+{
+  "actor": "priya.nair@company.com",
+  "role": "admin",
+  "action": "DELETE_USER",
+  "resource": "/api/users/334",
+  "resourceType": "USER",
+  "ipAddress": "192.168.1.45",
+  "region": "ap-south-1",
+  "severity": "HIGH",
+  "status": "Unresolved",
+  "timestamp": "2025-06-14T08:32:11Z"
+}
+```
+
 | Field | Notes |
 |---|---|
-| `actor.id/name/email/role` | Who performed the action |
-| `action` | Enumerated security action |
-| `resource.type/id/name` | Targeted resource |
-| `severity` | `critical \| high \| medium \| low \| info` |
-| `status` | `success \| failure \| pending \| blocked` |
-| `ip` / `region` | Network context |
+| `actor` | Actor email |
+| `role` | `admin \| user \| viewer \| service \| auditor` |
+| `action` | SCREAMING_SNAKE action enum (`DELETE_USER`, …) |
+| `resource` | Resource path/identifier |
+| `resourceType` | `USER \| FILE \| API_KEY \| …` |
+| `ipAddress` / `region` | Network context |
+| `severity` | `CRITICAL \| HIGH \| MEDIUM \| LOW \| INFO` |
+| `status` | `Unresolved \| Investigating \| Resolved \| Dismissed` |
 | `timestamp` | Event time (indexed) |
 | `createdAt` / `updatedAt` | Ingestion metadata |
 
 ### Indexes
 
-- `timestamp`, `severity`, `status`, `region`
-- Compound: `(timestamp, severity)`, `(status, timestamp)`, `(actor.role, timestamp)`, `(action, timestamp)`, `(resource.type, timestamp)`
+- `timestamp`, `severity`, `status`, `region`, `role`, `action`, `resourceType`
+- Compound: `(timestamp, severity)`, `(status, timestamp)`, `(role, timestamp)`, `(action, timestamp)`, `(resourceType, timestamp)`
 - Text index across actor, action, resource, IP, region, status
 
 Regex search is used for predictable partial matching across fields; text index remains available for ranking/evolution.

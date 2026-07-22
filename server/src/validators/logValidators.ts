@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { env } from '../config/env.js';
 import {
   ACTIONS,
   ACTOR_ROLES,
@@ -14,7 +15,6 @@ import {
   SEVERITIES,
   SORT_ORDERS,
 } from '../constants/logs.js';
-import { env } from '../config/env.js';
 
 const ipv4Regex =
   /^(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)$/;
@@ -29,33 +29,17 @@ const ipSchema = z
     message: 'Invalid IP address',
   });
 
-const actorSchema = z
-  .object({
-    id: z.string().trim().min(1).max(128),
-    name: z.string().trim().min(1).max(128),
-    email: z.string().trim().email().max(254),
-    role: z.enum(ACTOR_ROLES),
-  })
-  .strict();
-
-const resourceSchema = z
-  .object({
-    type: z.enum(RESOURCE_TYPES),
-    id: z.string().trim().min(1).max(128),
-    name: z.string().trim().min(1).max(256),
-  })
-  .strict();
-
 export const securityLogInputSchema = z
   .object({
-    actor: actorSchema,
+    actor: z.string().trim().email().max(254),
+    role: z.enum(ACTOR_ROLES),
     action: z.enum(ACTIONS),
-    resource: resourceSchema,
+    resource: z.string().trim().min(1).max(512),
+    resourceType: z.enum(RESOURCE_TYPES),
+    ipAddress: ipSchema,
+    region: z.string().trim().min(2).max(64),
     severity: z.enum(SEVERITIES),
     status: z.enum(LOG_STATUSES),
-    ip: ipSchema,
-    region: z.string().trim().min(2).max(64),
-    userAgent: z.string().trim().max(512).optional().default(''),
     timestamp: z.coerce.date(),
   })
   .strict();

@@ -33,21 +33,16 @@ export function LogsDataTable({ data, isLoading }: LogsDataTableProps) {
       ),
     },
     {
-      id: 'actor.name',
+      id: 'actor',
       header: 'Actor',
       sortable: true,
-      className: 'min-w-[180px]',
-      cell: (row) => (
-        <div className="space-y-0.5">
-          <p className="font-medium">{row.actor.name}</p>
-          <p className="text-xs text-muted-foreground">{row.actor.email}</p>
-        </div>
-      ),
+      className: 'min-w-[200px]',
+      cell: (row) => <span className="font-medium">{row.actor}</span>,
     },
     {
       id: 'role',
       header: 'Role',
-      cell: (row) => <Badge>{formatLabel(row.actor.role)}</Badge>,
+      cell: (row) => <Badge>{formatLabel(row.role)}</Badge>,
     },
     {
       id: 'action',
@@ -61,10 +56,8 @@ export function LogsDataTable({ data, isLoading }: LogsDataTableProps) {
       className: 'min-w-[180px]',
       cell: (row) => (
         <div className="space-y-0.5">
-          <p className="font-medium">{row.resource.name}</p>
-          <p className="text-xs text-muted-foreground">
-            {formatLabel(row.resource.type)} · {row.resource.id}
-          </p>
+          <p className="font-mono text-xs font-medium">{row.resource}</p>
+          <p className="text-xs text-muted-foreground">{row.resourceType}</p>
         </div>
       ),
     },
@@ -73,9 +66,7 @@ export function LogsDataTable({ data, isLoading }: LogsDataTableProps) {
       header: 'Severity',
       sortable: true,
       cell: (row) => (
-        <Badge variant={severityBadgeVariant(row.severity)}>
-          {formatLabel(row.severity)}
-        </Badge>
+        <Badge variant={severityBadgeVariant(row.severity)}>{row.severity}</Badge>
       ),
     },
     {
@@ -83,15 +74,13 @@ export function LogsDataTable({ data, isLoading }: LogsDataTableProps) {
       header: 'Status',
       sortable: true,
       cell: (row) => (
-        <Badge variant={statusBadgeVariant(row.status)}>
-          {formatLabel(row.status)}
-        </Badge>
+        <Badge variant={statusBadgeVariant(row.status)}>{row.status}</Badge>
       ),
     },
     {
-      id: 'ip',
+      id: 'ipAddress',
       header: 'IP',
-      cell: (row) => <span className="font-mono text-xs">{row.ip}</span>,
+      cell: (row) => <span className="font-mono text-xs">{row.ipAddress}</span>,
     },
     {
       id: 'region',

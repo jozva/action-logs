@@ -17,9 +17,9 @@ export function DashboardSummaryCards({
   }
 
   const critical =
-    summary?.bySeverity.find((item) => item.severity === 'critical')?.count ?? 0
-  const failures =
-    summary?.byStatus.find((item) => item.status === 'failure')?.count ?? 0
+    summary?.bySeverity.find((item) => item.severity === 'CRITICAL')?.count ?? 0
+  const unresolved =
+    summary?.byStatus.find((item) => item.status === 'Unresolved')?.count ?? 0
 
   const cards = [
     {
@@ -35,8 +35,8 @@ export function DashboardSummaryCards({
       tone: 'text-rose-700 bg-rose-50',
     },
     {
-      label: 'Failed Actions',
-      value: failures,
+      label: 'Unresolved',
+      value: unresolved,
       icon: CheckCircle2,
       tone: 'text-amber-700 bg-amber-50',
     },

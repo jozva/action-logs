@@ -8,29 +8,17 @@ import type {
   SortOrder,
 } from '@/constants/logs'
 
-export interface SecurityLogActor {
-  id: string
-  name: string
-  email: string
-  role: ActorRole
-}
-
-export interface SecurityLogResource {
-  type: ResourceType
-  id: string
-  name: string
-}
-
 export interface SecurityLog {
   id: string
-  actor: SecurityLogActor
+  actor: string
+  role: ActorRole
   action: ActionType
-  resource: SecurityLogResource
+  resource: string
+  resourceType: ResourceType
+  ipAddress: string
+  region: string
   severity: Severity
   status: LogStatus
-  ip: string
-  region: string
-  userAgent: string
   timestamp: string
   createdAt: string
   updatedAt: string

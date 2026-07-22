@@ -22,24 +22,18 @@ function pick<T>(items: readonly T[], index: number): T {
 }
 
 function buildRecord(index: number) {
+  const resourceType = pick(RESOURCE_TYPES, index + 1);
+
   return {
-    actor: {
-      id: `actor-${(index % 400) + 1}`,
-      name: `Operator ${(index % 400) + 1}`,
-      email: `operator${(index % 400) + 1}@example.com`,
-      role: pick(ACTOR_ROLES, index),
-    },
+    actor: `operator${(index % 400) + 1}@company.com`,
+    role: pick(ACTOR_ROLES, index),
     action: pick(ACTIONS, index + 3),
-    resource: {
-      type: pick(RESOURCE_TYPES, index + 1),
-      id: `res-${(index % 900) + 1}`,
-      name: `Resource ${(index % 900) + 1}`,
-    },
+    resource: `/api/${resourceType.toLowerCase()}s/${(index % 900) + 1}`,
+    resourceType,
+    ipAddress: `198.51.${Math.floor(index / 255) % 255}.${index % 255}`,
+    region: pick(REGIONS, index),
     severity: pick(SEVERITIES, index + 2),
     status: pick(LOG_STATUSES, index + 4),
-    ip: `198.51.${Math.floor(index / 255) % 255}.${index % 255}`,
-    region: pick(REGIONS, index),
-    userAgent: 'GidyUploadSample/1.0',
     timestamp: new Date(Date.now() - index * 1_500).toISOString(),
   };
 }
