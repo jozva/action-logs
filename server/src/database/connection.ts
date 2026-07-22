@@ -4,6 +4,7 @@ import { env } from '../config/env.js';
 import { logger } from '../utils/logger.js';
 
 mongoose.set('strictQuery', true);
+mongoose.set('sanitizeFilter', true);
 
 export async function connectDatabase(): Promise<typeof mongoose> {
   mongoose.connection.on('connected', () => {

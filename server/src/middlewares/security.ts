@@ -3,7 +3,6 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import type { ErrorRequestHandler, Express, RequestHandler } from 'express';
 import express from 'express';
-import mongoSanitize from 'express-mongo-sanitize';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import hpp from 'hpp';
@@ -13,6 +12,7 @@ import { env } from '../config/env.js';
 import { HTTP_STATUS } from '../constants/http.js';
 import { TooManyRequestsError } from '../errors/AppError.js';
 import { logger } from '../utils/logger.js';
+import { sanitizeRequest } from './sanitizeRequest.js';
 
 const morganStream = {
   write: (message: string) => {
@@ -83,12 +83,7 @@ export function applySecurityMiddleware(app: Express): void {
   app.use(cookieParser());
   app.use(express.json({ limit: env.bodyLimit, strict: true }));
   app.use(express.urlencoded({ extended: false, limit: env.bodyLimit }));
-  app.use(
-    mongoSanitize({
-      replaceWith: '_',
-      allowDots: false,
-    }),
-  );
+  app.use(sanitizeRequest);
   app.use(
     hpp({
       whitelist: [
