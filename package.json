@@ -1,0 +1,16 @@
+{
+  "name": "gidy-security-console",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Enterprise security audit log monitoring console",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "scripts": {
+    "dev:server": "npm --prefix server run dev",
+    "dev:client": "npm --prefix client run dev",
+    "build": "npm --prefix server run build && npm --prefix client run build",
+    "typecheck": "npm --prefix server run typecheck && npm --prefix client exec -- tsc -b",
+    "seed": "npm --prefix server run seed"
+  }
+}
