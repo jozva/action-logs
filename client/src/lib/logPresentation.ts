@@ -1,6 +1,4 @@
-import type { LogStatus, Severity } from '@/constants/logs'
-
-export function severityBadgeVariant(severity: Severity) {
+export function severityBadgeVariant(severity?: string) {
   switch (severity) {
     case 'CRITICAL':
       return 'critical' as const
@@ -17,7 +15,7 @@ export function severityBadgeVariant(severity: Severity) {
   }
 }
 
-export function statusBadgeVariant(status: LogStatus) {
+export function statusBadgeVariant(status?: string) {
   switch (status) {
     case 'Resolved':
       return 'success' as const
@@ -32,6 +30,9 @@ export function statusBadgeVariant(status: LogStatus) {
   }
 }
 
-export function formatLabel(value: string): string {
+export function formatLabel(value?: string | null): string {
+  if (!value) {
+    return '—'
+  }
   return value.replaceAll('_', ' ')
 }

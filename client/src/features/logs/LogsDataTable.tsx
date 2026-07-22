@@ -37,7 +37,7 @@ export function LogsDataTable({ data, isLoading }: LogsDataTableProps) {
       header: 'Actor',
       sortable: true,
       className: 'min-w-[200px]',
-      cell: (row) => <span className="font-medium">{row.actor}</span>,
+      cell: (row) => <span className="font-medium">{row.actor || '—'}</span>,
     },
     {
       id: 'role',
@@ -56,8 +56,8 @@ export function LogsDataTable({ data, isLoading }: LogsDataTableProps) {
       className: 'min-w-[180px]',
       cell: (row) => (
         <div className="space-y-0.5">
-          <p className="font-mono text-xs font-medium">{row.resource}</p>
-          <p className="text-xs text-muted-foreground">{row.resourceType}</p>
+          <p className="font-mono text-xs font-medium">{row.resource || '—'}</p>
+          <p className="text-xs text-muted-foreground">{row.resourceType || '—'}</p>
         </div>
       ),
     },
@@ -66,7 +66,9 @@ export function LogsDataTable({ data, isLoading }: LogsDataTableProps) {
       header: 'Severity',
       sortable: true,
       cell: (row) => (
-        <Badge variant={severityBadgeVariant(row.severity)}>{row.severity}</Badge>
+        <Badge variant={severityBadgeVariant(row.severity)}>
+          {row.severity || '—'}
+        </Badge>
       ),
     },
     {
@@ -74,19 +76,25 @@ export function LogsDataTable({ data, isLoading }: LogsDataTableProps) {
       header: 'Status',
       sortable: true,
       cell: (row) => (
-        <Badge variant={statusBadgeVariant(row.status)}>{row.status}</Badge>
+        <Badge variant={statusBadgeVariant(row.status)}>
+          {row.status || '—'}
+        </Badge>
       ),
     },
     {
       id: 'ipAddress',
       header: 'IP',
-      cell: (row) => <span className="font-mono text-xs">{row.ipAddress}</span>,
+      cell: (row) => (
+        <span className="font-mono text-xs">{row.ipAddress || '—'}</span>
+      ),
     },
     {
       id: 'region',
       header: 'Region',
       sortable: true,
-      cell: (row) => <span className="font-mono text-xs">{row.region}</span>,
+      cell: (row) => (
+        <span className="font-mono text-xs">{row.region || '—'}</span>
+      ),
     },
     {
       id: 'details',

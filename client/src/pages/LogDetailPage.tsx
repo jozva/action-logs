@@ -49,26 +49,35 @@ export default function LogDetailPage() {
       </section>
 
       <section className="grid gap-4 rounded-lg border border-border bg-card-solid/90 p-5 shadow-sm md:grid-cols-2">
-        <DetailItem label="Timestamp" value={format(new Date(log.timestamp), 'PPpp')} />
-        <DetailItem label="Region" value={log.region} mono />
-        <DetailItem label="Actor" value={log.actor} />
+        <DetailItem
+          label="Timestamp"
+          value={
+            log.timestamp ? format(new Date(log.timestamp), 'PPpp') : '—'
+          }
+        />
+        <DetailItem label="Region" value={log.region || '—'} mono />
+        <DetailItem label="Actor" value={log.actor || '—'} />
         <DetailItem label="Role" value={formatLabel(log.role)} />
         <DetailItem label="Action" value={formatLabel(log.action)} />
-        <DetailItem label="Resource" value={log.resource} mono />
-        <DetailItem label="Resource Type" value={log.resourceType} />
+        <DetailItem label="Resource" value={log.resource || '—'} mono />
+        <DetailItem label="Resource Type" value={log.resourceType || '—'} />
         <div className="space-y-1">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
             Severity
           </p>
-          <Badge variant={severityBadgeVariant(log.severity)}>{log.severity}</Badge>
+          <Badge variant={severityBadgeVariant(log.severity)}>
+            {log.severity || '—'}
+          </Badge>
         </div>
         <div className="space-y-1">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
             Status
           </p>
-          <Badge variant={statusBadgeVariant(log.status)}>{log.status}</Badge>
+          <Badge variant={statusBadgeVariant(log.status)}>
+            {log.status || '—'}
+          </Badge>
         </div>
-        <DetailItem label="IP Address" value={log.ipAddress} mono />
+        <DetailItem label="IP Address" value={log.ipAddress || '—'} mono />
       </section>
     </div>
   )
