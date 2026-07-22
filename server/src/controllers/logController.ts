@@ -42,8 +42,8 @@ export async function bulkUploadLogs(
   req: Request,
   res: Response,
 ): Promise<Response> {
-  const body = req.validatedBody ?? req.body;
-  if (!body?.records) {
+  const body = req.validatedBody;
+  if (!body || !('records' in body)) {
     throw new BadRequestError('Missing upload records');
   }
 

@@ -5,6 +5,7 @@ import { TableSkeleton } from '@/components/common/LoadingState'
 import { AppShell } from '@/layouts/AppShell'
 
 const DashboardPage = lazy(() => import('@/pages/DashboardPage'))
+const EmployeePage = lazy(() => import('@/pages/EmployeePage'))
 const UploadPage = lazy(() => import('@/pages/UploadPage'))
 const LogDetailPage = lazy(() => import('@/pages/LogDetailPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
@@ -24,6 +25,7 @@ export function AppRouter() {
         <Routes>
           <Route element={<AppShell />}>
             <Route index element={<DashboardPage />} />
+            <Route path="employees" element={<EmployeePage />} />
             <Route path="upload" element={<UploadPage />} />
             <Route path="logs/:id" element={<LogDetailPage />} />
             <Route path="home" element={<Navigate to="/" replace />} />

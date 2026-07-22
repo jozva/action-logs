@@ -196,6 +196,8 @@ Envelope:
 | `GET` | `/api/v1/logs/summary` | Dashboard aggregates |
 | `GET` | `/api/v1/logs/:id` | Single log |
 | `POST` | `/api/v1/logs/upload` | Bulk upload (`records[]`, max 10,000) |
+| `GET` | `/api/v1/actions` | Employee action catalog (severity/status policy) |
+| `POST` | `/api/v1/actions` | Execute employee action and create audit log |
 
 ### List query parameters
 

@@ -1,3 +1,4 @@
+import type { ExecuteActionInput } from '../validators/actionValidators.js';
 import type {
   BulkUploadBody,
   ListLogsQuery,
@@ -10,7 +11,7 @@ declare global {
       validatedParams?: {
         id?: string;
       };
-      validatedBody?: BulkUploadBody;
+      validatedBody?: BulkUploadBody | ExecuteActionInput;
     }
   }
 }

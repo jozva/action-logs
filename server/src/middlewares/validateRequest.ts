@@ -1,6 +1,7 @@
 import type { NextFunction, Request, RequestHandler, Response } from 'express';
 import type { ZodTypeAny } from 'zod';
 
+import type { ExecuteActionInput } from '../validators/actionValidators.js';
 import type {
   BulkUploadBody,
   ListLogsQuery,
@@ -16,18 +17,18 @@ export function validateRequest(schemas: ValidationSchemas): RequestHandler {
   return (req: Request, _res: Response, next: NextFunction) => {
     try {
       if (schemas.body) {
-        const parsed = schemas.body.parse(req.body) as BulkUploadBody;
+        const parsed = schemas.body.parse(req.body) as
+          | BulkUploadBody
+          | ExecuteActionInput;
         req.body = parsed;
         req.validatedBody = parsed;
       }
 
       if (schemas.query) {
-        // Express 5 exposes req.query as a getter-only property.
         req.validatedQuery = schemas.query.parse(req.query) as ListLogsQuery;
       }
 
       if (schemas.params) {
-        // Express 5 exposes req.params as a getter-only property.
         req.validatedParams = schemas.params.parse(req.params) as {
           id?: string;
         };

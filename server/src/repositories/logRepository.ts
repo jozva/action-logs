@@ -114,6 +114,14 @@ export async function findLogById(id: string): Promise<Record<string, unknown> |
   return mapLogDocument(item as { _id: unknown } & Record<string, unknown>);
 }
 
+export async function createLog(
+  record: SecurityLogInput,
+): Promise<Record<string, unknown>> {
+  const created = await SecurityLogModel.create(record);
+  const plain = created.toObject();
+  return mapLogDocument(plain as { _id: unknown } & Record<string, unknown>);
+}
+
 const BULK_INSERT_CHUNK_SIZE = 1_000;
 
 export async function insertManyLogs(

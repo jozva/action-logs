@@ -1,4 +1,4 @@
-import { Activity, Menu, ShieldCheck, Upload } from 'lucide-react'
+import { Activity, Menu, ShieldCheck, Upload, Users } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
@@ -7,6 +7,7 @@ import { useUiStore } from '@/stores/uiStore'
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: Activity },
+  { to: '/employees', label: 'Employees', icon: Users },
   { to: '/upload', label: 'Bulk Upload', icon: Upload },
 ]
 
