@@ -23,17 +23,17 @@ logsRouter.get(
   asyncHandler(logController.getDashboardSummary),
 );
 
-logsRouter.get(
-  '/:id',
-  validateRequest({ params: logIdParamsSchema }),
-  asyncHandler(logController.getLogById),
-);
-
 logsRouter.post(
   '/upload',
   createUploadRateLimiter(),
   validateRequest({ body: bulkUploadSchema }),
   asyncHandler(logController.bulkUploadLogs),
+);
+
+logsRouter.get(
+  '/:id',
+  validateRequest({ params: logIdParamsSchema }),
+  asyncHandler(logController.getLogById),
 );
 
 export { logsRouter };

@@ -126,6 +126,8 @@ export async function findLogById(id: string): Promise<Record<string, unknown> |
   return { id: String(_id), ...rest };
 }
 
+const BULK_INSERT_CHUNK_SIZE = 1_000;
+
 export async function insertManyLogs(
   records: SecurityLogInput[],
 ): Promise<{ insertedCount: number }> {
@@ -133,12 +135,18 @@ export async function insertManyLogs(
     return { insertedCount: 0 };
   }
 
-  const result = await SecurityLogModel.insertMany(records, {
-    ordered: false,
-    lean: true,
-  });
+  let insertedCount = 0;
 
-  return { insertedCount: result.length };
+  for (let index = 0; index < records.length; index += BULK_INSERT_CHUNK_SIZE) {
+    const chunk = records.slice(index, index + BULK_INSERT_CHUNK_SIZE);
+    const result = await SecurityLogModel.insertMany(chunk, {
+      ordered: false,
+      lean: true,
+    });
+    insertedCount += result.length;
+  }
+
+  return { insertedCount };
 }
 
 export async function getDashboardStats(): Promise<{

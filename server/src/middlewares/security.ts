@@ -26,9 +26,11 @@ export function createGeneralRateLimiter(): RequestHandler {
     max: env.rateLimitMax,
     standardHeaders: true,
     legacyHeaders: false,
-    handler: () => {
-      throw new TooManyRequestsError(
-        'Rate limit exceeded. Please retry after the window resets.',
+    handler: (_req, _res, next) => {
+      next(
+        new TooManyRequestsError(
+          'Rate limit exceeded. Please retry after the window resets.',
+        ),
       );
     },
   });
@@ -40,9 +42,11 @@ export function createUploadRateLimiter(): RequestHandler {
     max: env.uploadRateLimitMax,
     standardHeaders: true,
     legacyHeaders: false,
-    handler: () => {
-      throw new TooManyRequestsError(
-        'Upload rate limit exceeded. Please retry later.',
+    handler: (_req, _res, next) => {
+      next(
+        new TooManyRequestsError(
+          'Upload rate limit exceeded. Please retry later.',
+        ),
       );
     },
   });
