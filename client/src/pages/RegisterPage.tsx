@@ -7,18 +7,19 @@ import { z } from 'zod'
 
 import { ApiRequestError } from '@/api/httpClient'
 import { registerRequest } from '@/api/authApi'
+import { AuthShell } from '@/components/auth/AuthShell'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select } from '@/components/ui/select'
-import { AuthShell } from '@/components/auth/AuthShell'
+import { Skeleton } from '@/components/ui/skeleton'
+import { useDetectedRegion } from '@/hooks/useDetectedRegion'
 import { useAuthStore } from '@/stores/authStore'
 
 const registerSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
   password: z.string().min(8),
-  region: z.string().min(2),
 })
 
 type RegisterForm = z.infer<typeof registerSchema>
@@ -26,6 +27,7 @@ type RegisterForm = z.infer<typeof registerSchema>
 export default function RegisterPage() {
   const navigate = useNavigate()
   const { token, setSession } = useAuthStore()
+  const regionQuery = useDetectedRegion()
 
   const form = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
@@ -33,7 +35,6 @@ export default function RegisterPage() {
       name: '',
       email: '',
       password: '',
-      region: 'ap-south-1',
     },
   })
 
@@ -56,7 +57,7 @@ export default function RegisterPage() {
   return (
     <AuthShell
       title="Create account"
-      subtitle="Self-register as a standard employee. Admins can elevate roles later."
+      subtitle="Self-register as a standard employee. Region is detected automatically from your network."
     >
       <form
         className="space-y-4"
@@ -75,12 +76,18 @@ export default function RegisterPage() {
           <Input id="password" type="password" {...form.register('password')} />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="region">Region</Label>
-          <Select id="region" {...form.register('region')}>
-            <option value="ap-south-1">ap-south-1</option>
-            <option value="us-east-1">us-east-1</option>
-            <option value="eu-west-1">eu-west-1</option>
-          </Select>
+          <Label>Detected region</Label>
+          {regionQuery.isLoading ? (
+            <Skeleton className="h-10 w-full" />
+          ) : (
+            <div className="flex h-10 items-center justify-between rounded-md border border-border bg-muted/40 px-3 text-sm">
+              <span className="font-mono">{regionQuery.data?.region ?? 'detecting…'}</span>
+              <Badge variant="muted">{regionQuery.data?.source ?? 'default'}</Badge>
+            </div>
+          )}
+          <p className="text-xs text-muted-foreground">
+            Auto-detected from IP / timezone. No manual selection required.
+          </p>
         </div>
         <Button type="submit" className="w-full" disabled={mutation.isPending}>
           {mutation.isPending ? 'Creating…' : 'Create account'}

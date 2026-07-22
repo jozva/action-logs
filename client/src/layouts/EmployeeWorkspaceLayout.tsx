@@ -8,6 +8,7 @@ import {
 import { NavLink, Outlet } from 'react-router-dom'
 
 import { Badge } from '@/components/ui/badge'
+import { useDetectedRegion } from '@/hooks/useDetectedRegion'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/authStore'
 
@@ -21,6 +22,7 @@ const links = [
 
 export function EmployeeWorkspaceLayout() {
   const { user, hasPermission } = useAuthStore()
+  const regionQuery = useDetectedRegion()
 
   return (
     <div className="mx-auto flex max-w-[1400px] flex-col gap-6">
@@ -35,6 +37,9 @@ export function EmployeeWorkspaceLayout() {
           <div className="flex flex-wrap items-center gap-2 text-sm">
             <span className="font-medium">{user.name}</span>
             <Badge>{user.role}</Badge>
+            <Badge variant="muted">
+              region {regionQuery.data?.region ?? user.region}
+            </Badge>
             <span className="font-mono text-xs text-muted-foreground">{user.email}</span>
           </div>
         ) : null}

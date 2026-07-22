@@ -14,7 +14,6 @@ export async function registerRequest(payload: {
   name: string
   email: string
   password: string
-  region?: string
 }) {
   const response = await httpClient.post<ApiSuccessResponse<AuthResponse>>(
     '/auth/register',

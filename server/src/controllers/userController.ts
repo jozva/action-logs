@@ -4,7 +4,7 @@ import { HTTP_STATUS } from '../constants/http.js';
 import { BadRequestError, UnauthorizedError } from '../errors/AppError.js';
 import * as userService from '../services/userService.js';
 import { sendSuccess } from '../utils/apiResponse.js';
-import { resolveRequestIp } from '../utils/requestMeta.js';
+import { resolveRequestIp, resolveRequestRegionMeta } from '../utils/requestMeta.js';
 import type {
   CreateUserInput,
   UpdateUserInput,
@@ -30,8 +30,10 @@ export async function createUser(req: Request, res: Response): Promise<Response>
     throw new BadRequestError('Missing user payload');
   }
 
+  const detected = await resolveRequestRegionMeta(req);
   const user = await userService.createUserAsAdmin(actor, body, {
-    ipAddress: resolveRequestIp(req),
+    ipAddress: detected.ipAddress || resolveRequestIp(req),
+    region: detected.region,
   });
 
   return sendSuccess(res, user, 'User created', HTTP_STATUS.CREATED);

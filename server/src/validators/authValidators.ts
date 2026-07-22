@@ -12,7 +12,6 @@ export const registerSchema = z
     name: z.string().trim().min(2).max(120),
     email: z.string().trim().email().max(254),
     password: passwordSchema,
-    region: z.string().trim().min(2).max(64).optional().default('ap-south-1'),
   })
   .strict();
 
@@ -29,7 +28,6 @@ export const createUserSchema = z
     email: z.string().trim().email().max(254),
     password: passwordSchema,
     role: z.enum(ACTOR_ROLES).default('user'),
-    region: z.string().trim().min(2).max(64).default('ap-south-1'),
   })
   .strict();
 
@@ -37,7 +35,6 @@ export const updateUserSchema = z
   .object({
     name: z.string().trim().min(2).max(120).optional(),
     role: z.enum(ACTOR_ROLES).optional(),
-    region: z.string().trim().min(2).max(64).optional(),
     status: z.enum(['active', 'disabled']).optional(),
     password: passwordSchema.optional(),
   })

@@ -23,8 +23,10 @@ export default function EmployeeOverviewPage() {
             <span className="text-muted-foreground">Role:</span>
             <Badge>{user?.role}</Badge>
           </p>
-          <p>
-            <span className="text-muted-foreground">Region:</span> {user?.region}
+          <p className="flex items-center gap-2">
+            <span className="text-muted-foreground">Region:</span>
+            <span className="font-mono text-xs">{user?.region}</span>
+            <Badge variant="muted">auto-detected</Badge>
           </p>
         </div>
       </article>

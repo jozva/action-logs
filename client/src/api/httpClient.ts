@@ -46,10 +46,14 @@ export const httpClient: AxiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
+    'X-Client-Timezone': Intl.DateTimeFormat().resolvedOptions().timeZone,
   },
 })
 
 httpClient.interceptors.request.use((config) => {
+  config.headers['X-Client-Timezone'] =
+    Intl.DateTimeFormat().resolvedOptions().timeZone
+
   const raw = localStorage.getItem('gidy-auth-session')
   if (!raw) {
     return config

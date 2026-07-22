@@ -13,7 +13,6 @@ export async function createUser(payload: {
   email: string
   password: string
   role: ActorRole
-  region: string
 }) {
   const response = await httpClient.post<ApiSuccessResponse<AppUser>>('/users', payload)
   return response.data.data
@@ -24,7 +23,6 @@ export async function updateUser(
   payload: Partial<{
     name: string
     role: ActorRole
-    region: string
     status: 'active' | 'disabled'
     password: string
   }>,

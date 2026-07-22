@@ -16,7 +16,7 @@ export async function listUsersForActor(actor: AuthenticatedUser) {
 export async function createUserAsAdmin(
   actor: AuthenticatedUser,
   input: CreateUserInput,
-  meta: { ipAddress: string },
+  meta: { ipAddress: string; region: string },
 ) {
   const existing = await userRepository.findUserByEmail(input.email);
   if (existing) {
@@ -29,7 +29,7 @@ export async function createUserAsAdmin(
     email: input.email.toLowerCase(),
     passwordHash,
     role: input.role,
-    region: input.region,
+    region: meta.region,
   });
 
   await recordAuditEvent({
@@ -39,7 +39,7 @@ export async function createUserAsAdmin(
     resource: `/api/users/${created.id}`,
     resourceType: 'USER',
     ipAddress: meta.ipAddress,
-    region: actor.region,
+    region: meta.region,
   });
 
   return created;
@@ -69,7 +69,6 @@ export async function updateUserAsActor(
 
   const updates: Parameters<typeof userRepository.updateUser>[1] = {};
   if (input.name) updates.name = input.name;
-  if (input.region) updates.region = input.region;
   if (isAdmin && input.role) updates.role = input.role;
   if (isAdmin && input.status) updates.status = input.status;
   if (input.password) updates.passwordHash = await hashPassword(input.password);

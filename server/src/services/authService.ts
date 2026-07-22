@@ -41,7 +41,7 @@ export async function registerAccount(
     email: input.email.toLowerCase(),
     passwordHash,
     role: 'user',
-    region: input.region,
+    region: meta.region,
   });
 
   await recordAuditEvent({
@@ -93,6 +93,7 @@ export async function loginAccount(
   }
 
   user.lastLoginAt = new Date();
+  user.region = meta.region;
   await user.save();
 
   await recordAuditEvent({
@@ -102,7 +103,7 @@ export async function loginAccount(
     resource: `/api/sessions/${String(user._id)}`,
     resourceType: 'SESSION',
     ipAddress: meta.ipAddress,
-    region: String(user.region),
+    region: meta.region,
   });
 
   const authUser = toAuthUser({
@@ -110,7 +111,7 @@ export async function loginAccount(
     email: String(user.email),
     name: String(user.name),
     role: user.role as ActorRole,
-    region: String(user.region),
+    region: meta.region,
     status: user.status as 'active' | 'disabled',
   });
 

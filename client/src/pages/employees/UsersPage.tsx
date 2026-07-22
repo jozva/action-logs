@@ -22,7 +22,6 @@ const createSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
   role: z.enum(ACTOR_ROLES),
-  region: z.string().min(2),
 })
 
 type CreateForm = z.infer<typeof createSchema>
@@ -46,7 +45,6 @@ export default function UsersPage() {
       email: '',
       password: '',
       role: 'user',
-      region: 'ap-south-1',
     },
   })
 
@@ -54,7 +52,7 @@ export default function UsersPage() {
     mutationFn: createUser,
     onSuccess: async () => {
       toast.success('User created')
-      form.reset({ name: '', email: '', password: '', role: 'user', region: 'ap-south-1' })
+      form.reset({ name: '', email: '', password: '', role: 'user' })
       await queryClient.invalidateQueries({ queryKey: ['users'] })
       await queryClient.invalidateQueries({ queryKey: ['logs'] })
     },

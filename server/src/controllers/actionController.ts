@@ -4,15 +4,11 @@ import { HTTP_STATUS } from '../constants/http.js';
 import { BadRequestError } from '../errors/AppError.js';
 import * as actionService from '../services/actionService.js';
 import { sendSuccess } from '../utils/apiResponse.js';
+import {
+  resolveRequestIp,
+  resolveRequestRegionMeta,
+} from '../utils/requestMeta.js';
 import type { ExecuteActionInput } from '../validators/actionValidators.js';
-
-function resolveRequestIp(req: Request): string | undefined {
-  const forwarded = req.headers['x-forwarded-for'];
-  if (typeof forwarded === 'string' && forwarded.length > 0) {
-    return forwarded.split(',')[0]?.trim();
-  }
-  return req.ip;
-}
 
 export async function listActions(
   _req: Request,
@@ -31,9 +27,14 @@ export async function executeAction(
     throw new BadRequestError('Missing validated action payload');
   }
 
+  const detected = await resolveRequestRegionMeta(req);
   const result = await actionService.executeEmployeeAction(
-    body,
-    resolveRequestIp(req),
+    {
+      ...body,
+      region: body.region ?? detected.region,
+      ipAddress: body.ipAddress ?? detected.ipAddress ?? resolveRequestIp(req),
+    },
+    detected.ipAddress || resolveRequestIp(req),
   );
 
   return sendSuccess(

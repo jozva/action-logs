@@ -4,7 +4,10 @@ import { HTTP_STATUS } from '../constants/http.js';
 import { BadRequestError, UnauthorizedError } from '../errors/AppError.js';
 import * as authService from '../services/authService.js';
 import { sendSuccess } from '../utils/apiResponse.js';
-import { resolveRequestIp, resolveRequestRegion } from '../utils/requestMeta.js';
+import {
+  resolveRequestIp,
+  resolveRequestRegionMeta,
+} from '../utils/requestMeta.js';
 import type { LoginInput, RegisterInput } from '../validators/authValidators.js';
 
 export async function register(req: Request, res: Response): Promise<Response> {
@@ -13,9 +16,10 @@ export async function register(req: Request, res: Response): Promise<Response> {
     throw new BadRequestError('Missing registration payload');
   }
 
+  const detected = await resolveRequestRegionMeta(req);
   const result = await authService.registerAccount(body, {
-    ipAddress: resolveRequestIp(req),
-    region: resolveRequestRegion(req, body.region),
+    ipAddress: detected.ipAddress || resolveRequestIp(req),
+    region: detected.region,
   });
 
   return sendSuccess(res, result, 'Account created successfully', HTTP_STATUS.CREATED);
@@ -27,9 +31,10 @@ export async function login(req: Request, res: Response): Promise<Response> {
     throw new BadRequestError('Missing login payload');
   }
 
+  const detected = await resolveRequestRegionMeta(req);
   const result = await authService.loginAccount(body, {
-    ipAddress: resolveRequestIp(req),
-    region: resolveRequestRegion(req),
+    ipAddress: detected.ipAddress || resolveRequestIp(req),
+    region: detected.region,
   });
 
   return sendSuccess(res, result, 'Logged in successfully');
