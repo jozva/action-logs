@@ -38,9 +38,7 @@ export function EmployeeWorkspaceLayout() {
             <span className="font-medium">{user.name}</span>
             <Badge>{user.role}</Badge>
             <Badge variant="muted">
-              {regionQuery.data?.ipAddress
-                ? `${regionQuery.data.region} · ${regionQuery.data.ipAddress}`
-                : `region ${user.region}`}
+              region {regionQuery.data?.region ?? user.region}
             </Badge>
             <span className="font-mono text-xs text-muted-foreground">{user.email}</span>
           </div>
