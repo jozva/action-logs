@@ -79,6 +79,7 @@ export function applySecurityMiddleware(app: Express): void {
         'Authorization',
         'X-Requested-With',
         'X-Client-Timezone',
+        'X-Client-Public-Ip',
       ],
       maxAge: 600,
     }),

@@ -80,13 +80,22 @@ export default function RegisterPage() {
           {regionQuery.isLoading ? (
             <Skeleton className="h-10 w-full" />
           ) : (
-            <div className="flex h-10 items-center justify-between rounded-md border border-border bg-muted/40 px-3 text-sm">
-              <span className="font-mono">{regionQuery.data?.region ?? 'detecting…'}</span>
-              <Badge variant="muted">{regionQuery.data?.source ?? 'default'}</Badge>
+            <div className="space-y-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-mono">{regionQuery.data?.region ?? 'detecting…'}</span>
+                <Badge variant="muted">{regionQuery.data?.source ?? 'default'}</Badge>
+              </div>
+              <p className="font-mono text-xs text-muted-foreground">
+                IP {regionQuery.data?.ipAddress ?? '—'}
+                {regionQuery.data?.connectionIp &&
+                regionQuery.data.connectionIp !== regionQuery.data.ipAddress
+                  ? ` (via ${regionQuery.data.connectionIp})`
+                  : ''}
+              </p>
             </div>
           )}
           <p className="text-xs text-muted-foreground">
-            Auto-detected from IP / timezone. No manual selection required.
+            Uses your machine public IP automatically. No manual selection required.
           </p>
         </div>
         <Button type="submit" className="w-full" disabled={mutation.isPending}>

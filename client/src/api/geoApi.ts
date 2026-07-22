@@ -4,7 +4,9 @@ import type { ApiSuccessResponse } from '@/types/api'
 export interface DetectedRegion {
   region: string
   ipAddress: string
+  connectionIp: string
   source: 'geoip' | 'timezone' | 'default'
+  ipSource: 'connection' | 'egress' | 'client-hint'
   countryCode?: string
   timezone?: string
 }

@@ -2,6 +2,7 @@ import axios, { AxiosError, type AxiosInstance } from 'axios'
 import { toast } from 'sonner'
 
 import { clientEnv } from '@/lib/env'
+import { discoverBrowserPublicIp } from '@/lib/publicIp'
 import type { ApiErrorResponse } from '@/types/api'
 
 export class ApiRequestError extends Error {
@@ -50,9 +51,14 @@ export const httpClient: AxiosInstance = axios.create({
   },
 })
 
-httpClient.interceptors.request.use((config) => {
+httpClient.interceptors.request.use(async (config) => {
   config.headers['X-Client-Timezone'] =
     Intl.DateTimeFormat().resolvedOptions().timeZone
+
+  const publicIp = await discoverBrowserPublicIp()
+  if (publicIp) {
+    config.headers['X-Client-Public-Ip'] = publicIp
+  }
 
   const raw = localStorage.getItem('gidy-auth-session')
   if (!raw) {
