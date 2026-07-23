@@ -1,5 +1,8 @@
 import type { Server as SocketServer, Socket } from 'socket.io';
 import { logger } from '../utils/logger.js';
+import { UnauthorizedError } from '../errors/AppError.js';
+import { UserModel } from '../models/User.js';
+import { verifyAuthToken } from '../utils/jwt.js';
 
 export type WebSocketEvent = 'logs:created' | 'logs:updated' | 'logs:deleted';
 
@@ -23,24 +26,42 @@ class WebSocketService {
       return;
     }
 
-    this.io.on('connection', (socket: Socket) => {
+    this.io.on('connection', async (socket: Socket) => {
       logger.info(`WebSocket client connected: ${socket.id}`);
 
+      const authToken = socket.handshake.auth?.token as string | undefined;
+      if (!authToken) {
+        logger.warn(`WebSocket auth failed: missing token for socket ${socket.id}`);
+        socket.emit('unauthorized', { message: 'Missing authentication token' });
+        socket.disconnect(true);
+        return;
+      }
 
-      socket.on('authenticate', (userId: string) => {
-        logger.info(`User ${userId} authenticated on socket ${socket.id}`);
-        
+      try {
+        const payload = verifyAuthToken(authToken);
+        const user = await UserModel.findById(payload.sub).lean().exec();
+
+        if (!user || user.status !== 'active') {
+          throw new UnauthorizedError('Account is inactive or does not exist');
+        }
+
+        const userId = String(user._id);
         if (!this.activeConnections.has(userId)) {
           this.activeConnections.set(userId, []);
         }
         this.activeConnections.get(userId)?.push(socket.id);
-        
+
         socket.data.userId = userId;
         socket.join(`user:${userId}`);
+        socket.join('logs:all');
         socket.emit('authenticated', { success: true });
-      });
-
-      socket.join('logs:all');
+        logger.info(`User ${userId} authenticated on socket ${socket.id}`);
+      } catch (error: unknown) {
+        logger.warn(`WebSocket auth failed for socket ${socket.id}:`, error);
+        socket.emit('unauthorized', { message: 'Invalid authentication token' });
+        socket.disconnect(true);
+        return;
+      }
 
       socket.on('disconnect', () => {
         const userId = socket.data.userId as string | undefined;
