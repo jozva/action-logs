@@ -3,6 +3,7 @@ import type { Request, Response } from 'express';
 import { HTTP_STATUS } from '../constants/http.js';
 import { BadRequestError } from '../errors/AppError.js';
 import * as actionService from '../services/actionService.js';
+import { websocketService } from '../services/websocketService.js';
 import { sendSuccess } from '../utils/apiResponse.js';
 import {
   resolveRequestIp,
@@ -36,6 +37,12 @@ export async function executeAction(
     },
     detected.ipAddress || resolveRequestIp(req),
   );
+
+  websocketService.broadcastLogEvent('logs:created', {
+    logId: result.id,
+    action: result.action,
+    timestamp: result.timestamp,
+  });
 
   return sendSuccess(
     res,

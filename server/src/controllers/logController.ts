@@ -3,6 +3,7 @@ import type { Request, Response } from 'express';
 import { HTTP_STATUS } from '../constants/http.js';
 import { BadRequestError } from '../errors/AppError.js';
 import * as logService from '../services/logService.js';
+import { websocketService } from '../services/websocketService.js';
 import { sendSuccess } from '../utils/apiResponse.js';
 import type {
   BulkUploadBody,
@@ -53,6 +54,14 @@ export async function bulkUploadLogs(
   }
 
   const result = await logService.bulkUploadLogs(body.records);
+
+  if (result.validCount > 0) {
+    websocketService.broadcastLogEvent('logs:created', {
+      logId: 'bulk-upload',
+      count: result.validCount,
+      timestamp: new Date().toISOString(),
+    });
+  }
 
   const message =
     result.invalidCount > 0

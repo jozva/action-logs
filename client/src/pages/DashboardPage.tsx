@@ -3,6 +3,7 @@ import { DashboardSummaryCards } from '@/features/logs/DashboardSummaryCards'
 import { LogFiltersBar } from '@/features/logs/LogFiltersBar'
 import { LogsDataTable } from '@/features/logs/LogsDataTable'
 import { useDashboardSummaryQuery, useLogsQuery } from '@/hooks/useLogsQuery'
+import { useWebSocket } from '@/hooks/useWebSocket'
 import { ApiRequestError } from '@/api/httpClient'
 import { useLogFiltersStore } from '@/stores/logFiltersStore'
 
@@ -10,6 +11,17 @@ export default function DashboardPage() {
   const { pageSize, setPage, setPageSize } = useLogFiltersStore()
   const logsQuery = useLogsQuery()
   const summaryQuery = useDashboardSummaryQuery()
+
+  useWebSocket({
+    onLogsCreated: () => {
+      void logsQuery.refetch()
+      void summaryQuery.refetch()
+    },
+    onLogsUpdated: () => {
+      void logsQuery.refetch()
+      void summaryQuery.refetch()
+    },
+  })
 
   const errorMessage =
     logsQuery.error instanceof ApiRequestError
@@ -26,7 +38,8 @@ export default function DashboardPage() {
         </h2>
         <p className="max-w-3xl text-sm text-muted-foreground md:text-base">
           Search, filter, sort, and paginate security events. Every query is executed
-          on the API — the browser only renders the current page.
+          on the API — the browser only renders the current page. Updates appear in
+          real-time across connected browsers.
         </p>
       </section>
 

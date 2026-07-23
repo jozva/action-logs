@@ -1,13 +1,27 @@
+import { createServer } from 'http';
+import { Server as SocketServer } from 'socket.io';
 import { createApp } from './app.js';
 import { env } from './config/env.js';
 import { connectDatabase } from './database/connection.js';
 import { logger } from './utils/logger.js';
+import { websocketService } from './services/websocketService.js';
 
 async function bootstrap(): Promise<void> {
   await connectDatabase();
 
   const app = createApp();
-  const server = app.listen(env.port, () => {
+  const httpServer = createServer(app);
+  const io = new SocketServer(httpServer, {
+    cors: {
+      origin: env.corsOrigins.split(',').map((url) => url.trim()),
+      credentials: true,
+    },
+  });
+
+  websocketService.initialize(io);
+  websocketService.setupConnections();
+
+  httpServer.listen(env.port, () => {
     logger.info(`API listening on port ${env.port}`, {
       env: env.nodeEnv,
       corsOrigins: env.corsOrigins,
@@ -16,7 +30,7 @@ async function bootstrap(): Promise<void> {
 
   const shutdown = async (signal: string) => {
     logger.info(`Received ${signal}, shutting down gracefully`);
-    server.close(async () => {
+    httpServer.close(async () => {
       const { disconnectDatabase } = await import('./database/connection.js');
       await disconnectDatabase();
       process.exit(0);
