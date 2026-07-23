@@ -13,7 +13,7 @@ async function bootstrap(): Promise<void> {
   const httpServer = createServer(app);
   const io = new SocketServer(httpServer, {
     cors: {
-      origin: env.corsOrigins.split(',').map((url) => url.trim()),
+      origin: env.corsOrigins,
       credentials: true,
     },
   });

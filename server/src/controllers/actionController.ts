@@ -38,10 +38,15 @@ export async function executeAction(
     detected.ipAddress || resolveRequestIp(req),
   );
 
+  const auditLog = result.auditLog as {
+    id: string;
+    timestamp: Date;
+  } & Record<string, unknown>;
+
   websocketService.broadcastLogEvent('logs:created', {
-    logId: result.id,
+    logId: auditLog.id,
     action: result.action,
-    timestamp: result.timestamp,
+    timestamp: auditLog.timestamp,
   });
 
   return sendSuccess(
