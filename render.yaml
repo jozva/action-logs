@@ -15,6 +15,7 @@ services:
       - key: MONGODB_URI
         sync: false
       - key: CORS_ORIGIN
+        value: http://localhost:5173,https://actionslog-one.vercel.app,https://action-logs.onrender.com
         sync: false
       - key: LOG_LEVEL
         value: info
