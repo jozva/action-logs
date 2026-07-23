@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { io, type Socket } from 'socket.io-client';
+import { toast } from 'sonner';
 import { clientEnv } from '@/lib/env';
 import { useAuthStore } from '@/stores/authStore';
 import { logger } from '@/lib/logger';
@@ -35,15 +36,31 @@ export function useWebSocket(options: WebSocketHookOptions) {
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
       reconnectionAttempts: 5,
+      auth: {
+        token,
+      },
     });
 
     socket.on('connect', () => {
       logger.info('WebSocket connected');
-      socket.emit('authenticate', user.id);
     });
 
     socket.on('authenticated', () => {
       logger.info('WebSocket authenticated');
+    });
+
+    socket.on('unauthorized', (data: { message?: string }) => {
+      const message = data?.message ?? 'WebSocket unauthorized';
+      logger.warn('WebSocket unauthorized:', message);
+      toast.error(message);
+      socket.disconnect();
+    });
+
+    socket.on('connect_error', (error: unknown) => {
+      logger.error('WebSocket connection error:', error);
+      const message =
+        error instanceof Error ? error.message : 'WebSocket connection failed';
+      toast.error(message);
     });
 
     socket.on('logs:created', (data: unknown) => {

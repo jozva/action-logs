@@ -14,25 +14,41 @@ class ClientLogger {
 
   debug(message: string, data?: unknown): void {
     if (this.shouldLog('debug')) {
-      console.debug(`[DEBUG] ${message}`, data);
+      if (data !== undefined) {
+        console.debug(`[DEBUG] ${message}`, data);
+      } else {
+        console.debug(`[DEBUG] ${message}`);
+      }
     }
   }
 
   info(message: string, data?: unknown): void {
     if (this.shouldLog('info')) {
-      console.info(`[INFO] ${message}`, data);
+      if (data !== undefined) {
+        console.info(`[INFO] ${message}`, data);
+      } else {
+        console.info(`[INFO] ${message}`);
+      }
     }
   }
 
   warn(message: string, data?: unknown): void {
     if (this.shouldLog('warn')) {
-      console.warn(`[WARN] ${message}`, data);
+      if (data !== undefined) {
+        console.warn(`[WARN] ${message}`, data);
+      } else {
+        console.warn(`[WARN] ${message}`);
+      }
     }
   }
 
   error(message: string, data?: unknown): void {
     if (this.shouldLog('error')) {
-      console.error(`[ERROR] ${message}`, data);
+      if (data !== undefined) {
+        console.error(`[ERROR] ${message}`, data);
+      } else {
+        console.error(`[ERROR] ${message}`);
+      }
     }
   }
 }
