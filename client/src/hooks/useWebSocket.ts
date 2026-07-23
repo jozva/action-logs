@@ -14,13 +14,13 @@ interface WebSocketHookOptions {
 
 export function useWebSocket(options: WebSocketHookOptions) {
   const socketRef = useRef<Socket | null>(null);
+  const handlersRef = useRef(options);
   const { token, user } = useAuthStore();
-  const {
-    onLogsCreated,
-    onLogsUpdated,
-    onLogsDeleted,
-    enabled = true,
-  } = options;
+  const { enabled = true } = options;
+
+  useEffect(() => {
+    handlersRef.current = options;
+  }, [options]);
 
   useEffect(() => {
     if (!enabled || !token || !user) {
@@ -28,6 +28,12 @@ export function useWebSocket(options: WebSocketHookOptions) {
     }
 
     const baseUrl = clientEnv.apiBaseUrl.replace('/api/v1', '');
+
+    logger.info('Initializing WebSocket', {
+      baseUrl,
+      hasToken: Boolean(token),
+      hasUser: Boolean(user),
+    });
 
     const socket = io(baseUrl, {
       path: '/socket.io',
@@ -65,17 +71,23 @@ export function useWebSocket(options: WebSocketHookOptions) {
 
     socket.on('logs:created', (data: unknown) => {
       logger.info('Real-time log update received:', data);
-      onLogsCreated?.(data as Parameters<NonNullable<typeof onLogsCreated>>[0]);
+      handlersRef.current.onLogsCreated?.(
+        data as Parameters<NonNullable<typeof handlersRef.current.onLogsCreated>>[0],
+      );
     });
 
     socket.on('logs:updated', (data: unknown) => {
       logger.info('Real-time log update received:', data);
-      onLogsUpdated?.(data as Parameters<NonNullable<typeof onLogsUpdated>>[0]);
+      handlersRef.current.onLogsUpdated?.(
+        data as Parameters<NonNullable<typeof handlersRef.current.onLogsUpdated>>[0],
+      );
     });
 
     socket.on('logs:deleted', (data: unknown) => {
       logger.info('Real-time log deleted:', data);
-      onLogsDeleted?.(data as Parameters<NonNullable<typeof onLogsDeleted>>[0]);
+      handlersRef.current.onLogsDeleted?.(
+        data as Parameters<NonNullable<typeof handlersRef.current.onLogsDeleted>>[0],
+      );
     });
 
     socket.on('disconnect', () => {
@@ -91,7 +103,7 @@ export function useWebSocket(options: WebSocketHookOptions) {
     return () => {
       socket.disconnect();
     };
-  }, [enabled, token, user, onLogsCreated, onLogsUpdated, onLogsDeleted]);
+  }, [enabled, token, user]);
 
   return socketRef.current;
 }

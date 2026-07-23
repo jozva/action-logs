@@ -49,4 +49,3 @@ const payload = {
 };
 
 writeFileSync(outputPath, JSON.stringify(payload));
-console.log(`Wrote ${count} records to ${outputPath}`);

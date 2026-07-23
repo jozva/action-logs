@@ -27,7 +27,11 @@ class WebSocketService {
     }
 
     this.io.on('connection', async (socket: Socket) => {
-      logger.info(`WebSocket client connected: ${socket.id}`);
+      const origin = socket.handshake.headers.origin ?? 'unknown';
+      logger.info(`WebSocket client connected: ${socket.id}`, {
+        origin,
+        authPresent: Boolean(socket.handshake.auth?.token),
+      });
 
       const authToken = socket.handshake.auth?.token as string | undefined;
       if (!authToken) {
