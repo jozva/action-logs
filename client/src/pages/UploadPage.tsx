@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { FileJson2, Upload } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
@@ -10,10 +10,12 @@ import { ApiRequestError } from '@/api/httpClient'
 import { uploadLogs } from '@/api/logsApi'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+import { downloadJson, formatBytes } from '@/lib/download'
+import { cn } from '@/lib/utils'
 import type { BulkUploadResult } from '@/types/logs'
 
 const uploadFormSchema = z.object({
-  payload: z.string().min(2, 'Paste a JSON array or an object with a records array'),
+  payload: z.string().min(2, 'Paste JSON or choose a .json file'),
 })
 
 type UploadFormValues = z.infer<typeof uploadFormSchema>
@@ -37,9 +39,41 @@ function parseUploadPayload(raw: string): unknown[] {
   throw new Error('JSON must be an array or an object with a records array')
 }
 
+const SAMPLE_RECORDS = {
+  records: [
+    {
+      actor: 'priya.nair@company.com',
+      role: 'admin',
+      action: 'DELETE_USER',
+      resource: '/api/users/334',
+      resourceType: 'USER',
+      ipAddress: '192.168.1.45',
+      region: 'ap-south-1',
+      severity: 'HIGH',
+      status: 'Unresolved',
+      timestamp: '2025-06-14T08:32:11Z',
+    },
+    {
+      actor: 'ops.bot@company.com',
+      role: 'service',
+      action: 'UPLOAD_FILE',
+      resource: '/api/files/report-q2.pdf',
+      resourceType: 'FILE',
+      ipAddress: '10.0.4.22',
+      region: 'us-east-1',
+      severity: 'INFO',
+      status: 'Resolved',
+      timestamp: '2025-06-14T09:10:00Z',
+    },
+  ],
+}
+
 export default function UploadPage() {
   const queryClient = useQueryClient()
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [result, setResult] = useState<BulkUploadResult | null>(null)
+  const [fileMeta, setFileMeta] = useState<{ name: string; size: number } | null>(null)
+  const [dragOver, setDragOver] = useState(false)
 
   const form = useForm<UploadFormValues>({
     resolver: zodResolver(uploadFormSchema),
@@ -68,40 +102,54 @@ export default function UploadPage() {
     },
   })
 
-  const sampleHint = useMemo(
-    () =>
-      JSON.stringify(
-        {
-          records: [
-            {
-              actor: 'priya.nair@company.com',
-              role: 'admin',
-              action: 'DELETE_USER',
-              resource: '/api/users/334',
-              resourceType: 'USER',
-              ipAddress: '192.168.1.45',
-              region: 'ap-south-1',
-              severity: 'HIGH',
-              status: 'Unresolved',
-              timestamp: '2025-06-14T08:32:11Z',
-            },
-          ],
-        },
-        null,
-        2,
-      ),
-    [],
-  )
+  const sampleHint = useMemo(() => JSON.stringify(SAMPLE_RECORDS, null, 2), [])
+
+  const loadJsonText = (text: string, sourceName?: string) => {
+    try {
+      const records = parseUploadPayload(text)
+      form.setValue('payload', JSON.stringify({ records }, null, 2), {
+        shouldValidate: true,
+      })
+      form.clearErrors('payload')
+      if (sourceName) {
+        setFileMeta({ name: sourceName, size: new Blob([text]).size })
+      }
+      toast.success(`Loaded ${records.length.toLocaleString()} record(s)`)
+    } catch {
+      form.setError('payload', {
+        message: 'Invalid JSON. Provide an array or { "records": [...] }',
+      })
+    }
+  }
+
+  const onFileChosen = async (file: File | null) => {
+    if (!file) return
+    if (!file.name.toLowerCase().endsWith('.json') && file.type !== 'application/json') {
+      toast.error('Please choose a .json file')
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('JSON file must be 5 MB or smaller')
+      return
+    }
+    const text = await file.text()
+    loadJsonText(text, file.name)
+  }
 
   const onSubmit = form.handleSubmit((values) => {
     try {
       const records = parseUploadPayload(values.payload)
+      if (records.length === 0) {
+        form.setError('payload', { message: 'records array is empty' })
+        return
+      }
       if (records.length > 10_000) {
         form.setError('payload', {
           message: 'Maximum 10,000 records allowed per upload',
         })
         return
       }
+      setResult(null)
       mutation.mutate(records)
     } catch {
       form.setError('payload', {
@@ -113,48 +161,95 @@ export default function UploadPage() {
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6">
       <section className="space-y-2">
-        <h2 className="text-2xl font-semibold tracking-tight md:text-3xl">
-          Bulk Upload
-        </h2>
+        <h2 className="text-2xl font-semibold tracking-tight md:text-3xl">Bulk Upload</h2>
         <p className="max-w-3xl text-sm text-muted-foreground md:text-base">
-          Upload up to 10,000 security log records as JSON. Every object is validated
-          on the server. Invalid rows are reported without crashing the request.
+          Upload up to 10,000 security log records as JSON. Drop a file or paste a payload.
+          Every object is validated on the server; invalid rows are reported without failing
+          the whole batch when at least one row is valid.
         </p>
       </section>
 
-      <form
-        onSubmit={onSubmit}
-        className="space-y-4 rounded-lg border border-border bg-card-solid/90 p-4 shadow-sm"
-      >
-        <div className="flex items-center justify-between gap-3">
-          <Label htmlFor="payload">JSON Payload</Label>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => form.setValue('payload', sampleHint, { shouldValidate: true })}
-          >
-            <FileJson2 className="h-4 w-4" />
-            Insert sample
-          </Button>
+      <section className="space-y-4 rounded-lg border border-border bg-card-solid/90 p-4 shadow-sm">
+        <div
+          className={cn(
+            'flex flex-col items-center justify-center rounded-lg border border-dashed px-6 py-8 text-center transition-colors',
+            dragOver ? 'border-teal-600 bg-teal-50/70' : 'border-border bg-slate-50/70',
+          )}
+          onDragOver={(event) => {
+            event.preventDefault()
+            setDragOver(true)
+          }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={(event) => {
+            event.preventDefault()
+            setDragOver(false)
+            void onFileChosen(event.dataTransfer.files?.[0] ?? null)
+          }}
+        >
+          <Upload className="mb-3 h-8 w-8 text-teal-800" />
+          <p className="text-sm font-medium">Drop a JSON file here</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Expected shape: {'{ "records": [ ... ] }'} or a bare array
+          </p>
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
+            <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
+              Choose JSON file
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => form.setValue('payload', sampleHint, { shouldValidate: true })}
+            >
+              <FileJson2 className="h-4 w-4" />
+              Insert sample
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => downloadJson(SAMPLE_RECORDS, 'sample-security-logs.json')}
+            >
+              Download sample JSON
+            </Button>
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/json,.json"
+            className="hidden"
+            onChange={(event) => void onFileChosen(event.target.files?.[0] ?? null)}
+          />
+          {fileMeta ? (
+            <p className="mt-3 text-xs text-muted-foreground">
+              Loaded {fileMeta.name} · {formatBytes(fileMeta.size)}
+            </p>
+          ) : null}
         </div>
 
-        <textarea
-          id="payload"
-          className="min-h-[320px] w-full rounded-md border border-border bg-slate-50 px-3 py-2 font-mono text-xs leading-relaxed text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          placeholder='[{ "actor": { ... }, "action": "login", ... }]'
-          {...form.register('payload')}
-        />
+        <form onSubmit={onSubmit} className="space-y-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="payload">JSON payload</Label>
+            <textarea
+              id="payload"
+              className="min-h-[280px] w-full rounded-md border border-border bg-slate-50 px-3 py-2 font-mono text-xs leading-relaxed text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              placeholder='{ "records": [{ "actor": "user@company.com", "role": "admin", ... }] }'
+              {...form.register('payload')}
+            />
+            {form.formState.errors.payload ? (
+              <p className="text-sm text-danger">{form.formState.errors.payload.message}</p>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Required fields: actor (email), role, action, resource, resourceType, ipAddress,
+                region, severity, status, timestamp
+              </p>
+            )}
+          </div>
 
-        {form.formState.errors.payload ? (
-          <p className="text-sm text-danger">{form.formState.errors.payload.message}</p>
-        ) : null}
-
-        <Button type="submit" disabled={mutation.isPending}>
-          <Upload className="h-4 w-4" />
-          {mutation.isPending ? 'Uploading…' : 'Upload records'}
-        </Button>
-      </form>
+          <Button type="submit" disabled={mutation.isPending}>
+            <Upload className="h-4 w-4" />
+            {mutation.isPending ? 'Uploading…' : 'Upload records'}
+          </Button>
+        </form>
+      </section>
 
       {result ? (
         <section className="space-y-3 rounded-lg border border-border bg-card-solid/90 p-4 shadow-sm">

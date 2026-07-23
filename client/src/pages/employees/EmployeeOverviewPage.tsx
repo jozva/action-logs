@@ -38,6 +38,7 @@ export default function EmployeeOverviewPage() {
           <li>Create account registers a standard `user` role</li>
           <li>Admins can create, update, and delete users</li>
           <li>Files, exports, and policies enforce RBAC on the server</li>
+          <li>File upload/download and JSON log export are audited</li>
         </ul>
         <div className="mt-4 flex flex-wrap gap-2">
           {hasPermission('user:create') ? (

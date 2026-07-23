@@ -81,6 +81,7 @@ export function applySecurityMiddleware(app: Express): void {
         'X-Client-Timezone',
         'X-Client-Public-Ip',
       ],
+      exposedHeaders: ['Content-Disposition', 'Content-Type', 'Content-Length'],
       maxAge: 600,
     }),
   );

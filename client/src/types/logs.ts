@@ -3,6 +3,7 @@ import type {
   ActorRole,
   LogSortField,
   LogStatus,
+  RegionCode,
   ResourceType,
   Severity,
   SortOrder,
@@ -31,7 +32,7 @@ export interface LogFilters {
   status: LogStatus | ''
   action: ActionType | ''
   resourceType: ResourceType | ''
-  region: string
+  region: RegionCode | ''
   dateFrom: string
   dateTo: string
   page: number

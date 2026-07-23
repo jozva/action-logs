@@ -10,10 +10,6 @@ function isPublicIpv4(ip: string): boolean {
   return IPV4_PATTERN.test(ip) && !PRIVATE_IP_PATTERN.test(ip)
 }
 
-/**
- * Discovers this browser machine's public/WAN IP.
- * Used as a hint for localhost API calls where the server only sees 127.0.0.1.
- */
 export async function discoverBrowserPublicIp(): Promise<string | null> {
   if (cachedPublicIp && cachedPublicIp.expiresAt > Date.now()) {
     return cachedPublicIp.value

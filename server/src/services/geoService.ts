@@ -105,10 +105,6 @@ async function fetchJsonWithTimeout(
   }
 }
 
-/**
- * Discovers this machine's public/WAN IP when the inbound request is private
- * (localhost / LAN). Uses outbound egress lookup against a public IP service.
- */
 export async function discoverMachinePublicIp(): Promise<string | null> {
   if (cachedEgressIp && cachedEgressIp.expiresAt > Date.now()) {
     return cachedEgressIp.value;

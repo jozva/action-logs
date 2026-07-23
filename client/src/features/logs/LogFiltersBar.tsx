@@ -8,9 +8,11 @@ import {
   ACTIONS,
   ACTOR_ROLES,
   LOG_STATUSES,
+  REGIONS,
   RESOURCE_TYPES,
   SEVERITIES,
 } from '@/constants/logs'
+import { isDateRangeValid } from '@/lib/dateRange'
 import { formatLabel } from '@/lib/logPresentation'
 import { useLogFiltersStore } from '@/stores/logFiltersStore'
 
@@ -27,8 +29,11 @@ export function LogFiltersBar() {
     dateTo,
     setSearch,
     setFilter,
+    setDateFilter,
     resetFilters,
   } = useLogFiltersStore()
+
+  const rangeInvalid = !isDateRangeValid(dateFrom, dateTo)
 
   return (
     <section className="space-y-4 rounded-lg border border-border bg-card-solid/85 p-4 shadow-sm">
@@ -88,22 +93,21 @@ export function LogFiltersBar() {
           options={RESOURCE_TYPES}
           onChange={(value) => setFilter('resourceType', value as typeof resourceType)}
         />
-        <div className="space-y-1.5">
-          <Label htmlFor="region">Region</Label>
-          <Input
-            id="region"
-            value={region}
-            onChange={(event) => setFilter('region', event.target.value)}
-            placeholder="e.g. us-east-1"
-          />
-        </div>
+        <FilterSelect
+          id="region"
+          label="Region"
+          value={region}
+          options={REGIONS}
+          onChange={(value) => setFilter('region', value as typeof region)}
+        />
         <div className="space-y-1.5">
           <Label htmlFor="dateFrom">Date From</Label>
           <Input
             id="dateFrom"
             type="datetime-local"
             value={dateFrom}
-            onChange={(event) => setFilter('dateFrom', event.target.value)}
+            max={dateTo || undefined}
+            onChange={(event) => setDateFilter('dateFrom', event.target.value)}
           />
         </div>
         <div className="space-y-1.5">
@@ -112,10 +116,22 @@ export function LogFiltersBar() {
             id="dateTo"
             type="datetime-local"
             value={dateTo}
-            onChange={(event) => setFilter('dateTo', event.target.value)}
+            min={dateFrom || undefined}
+            onChange={(event) => setDateFilter('dateTo', event.target.value)}
           />
         </div>
       </div>
+
+      {rangeInvalid ? (
+        <p className="text-sm text-danger">
+          Date From must be earlier than or equal to Date To.
+        </p>
+      ) : dateFrom || dateTo ? (
+        <p className="text-xs text-muted-foreground">
+          Date range is applied on the server. Clear either field or use Reset to
+          remove the filter.
+        </p>
+      ) : null}
     </section>
   )
 }
@@ -140,7 +156,7 @@ function FilterSelect({
         <option value="">All</option>
         {options.map((option) => (
           <option key={option} value={option}>
-            {formatLabel(option)}
+            {id === 'region' ? option : formatLabel(option)}
           </option>
         ))}
       </Select>

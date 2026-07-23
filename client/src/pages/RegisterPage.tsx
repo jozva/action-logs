@@ -8,18 +8,20 @@ import { z } from 'zod'
 import { ApiRequestError } from '@/api/httpClient'
 import { registerRequest } from '@/api/authApi'
 import { AuthShell } from '@/components/auth/AuthShell'
+import { PasswordRequirements } from '@/components/auth/PasswordRequirements'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useDetectedRegion } from '@/hooks/useDetectedRegion'
+import { strongPasswordSchema } from '@/lib/passwordPolicy'
 import { useAuthStore } from '@/stores/authStore'
 
 const registerSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
-  password: z.string().min(8),
+  password: strongPasswordSchema,
 })
 
 type RegisterForm = z.infer<typeof registerSchema>
@@ -36,7 +38,10 @@ export default function RegisterPage() {
       email: '',
       password: '',
     },
+    mode: 'onBlur',
   })
+
+  const passwordValue = form.watch('password')
 
   const mutation = useMutation({
     mutationFn: registerRequest,
@@ -65,15 +70,34 @@ export default function RegisterPage() {
       >
         <div className="space-y-1.5">
           <Label htmlFor="name">Full name</Label>
-          <Input id="name" {...form.register('name')} />
+          <Input id="name" autoComplete="name" {...form.register('name')} />
+          {form.formState.errors.name ? (
+            <p className="text-xs text-danger">{form.formState.errors.name.message}</p>
+          ) : null}
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="email">Work email</Label>
-          <Input id="email" type="email" {...form.register('email')} />
+          <Input id="email" type="email" autoComplete="email" {...form.register('email')} />
+          {form.formState.errors.email ? (
+            <p className="text-xs text-danger">{form.formState.errors.email.message}</p>
+          ) : null}
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="password">Password</Label>
-          <Input id="password" type="password" {...form.register('password')} />
+          <Input
+            id="password"
+            type="password"
+            autoComplete="new-password"
+            {...form.register('password')}
+          />
+          {form.formState.errors.password ? (
+            <p className="text-xs text-danger">{form.formState.errors.password.message}</p>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Use a strong password — requirements update as you type.
+            </p>
+          )}
+          <PasswordRequirements value={passwordValue} className="mt-2" />
         </div>
         <div className="space-y-1.5">
           <Label>Detected region</Label>

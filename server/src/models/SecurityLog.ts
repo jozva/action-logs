@@ -8,10 +8,6 @@ import {
   SEVERITIES,
 } from '../constants/logs.js';
 
-/**
- * Flat audit-log document matching the assignment contract:
- * actor, role, action, resource, resourceType, ipAddress, region, severity, status, timestamp
- */
 const securityLogSchema = new Schema(
   {
     actor: {

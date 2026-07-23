@@ -1,26 +1,61 @@
 # Gidy Security Console
 
-Enterprise-grade security audit log monitoring platform.
+Full-stack security operations console for ingesting, searching, filtering, and auditing security events.
 
-Built as a production-style full-stack system with server-side search, filtering, sorting, pagination, and bulk ingestion of up to **10,000** records per request.
-
-Think internal ops console — closer to Datadog / Cloudflare / AWS Console than a tutorial CRUD app.
+The product is built like an internal enterprise ops tool: server-owned query semantics, JWT auth with RBAC, audited employee actions, Cloudinary-backed file storage, and JSON log export.
 
 ---
 
-## Screenshots
+## Table of contents
 
-> Placeholders — capture after local run or deployment.
+1. [Overview](#overview)
+2. [Tech stack](#tech-stack)
+3. [Architecture](#architecture)
+4. [Repository structure](#repository-structure)
+5. [Features](#features)
+6. [Domain model](#domain-model)
+7. [API reference](#api-reference)
+8. [Authentication and RBAC](#authentication-and-rbac)
+9. [Local setup](#local-setup)
+10. [Environment variables](#environment-variables)
+11. [Scripts](#scripts)
+12. [Bulk upload format](#bulk-upload-format)
+13. [Files and Cloudinary](#files-and-cloudinary)
+14. [Exports](#exports)
+15. [Security controls](#security-controls)
+16. [Performance notes](#performance-notes)
+17. [Deployment](#deployment)
+18. [Troubleshooting](#troubleshooting)
 
-| Dashboard | Bulk Upload |
+---
+
+## Overview
+
+Gidy Security Console provides:
+
+- A dashboard for security audit logs with server-side search, filters, sort, and pagination
+- Bulk JSON upload (up to 10,000 records per request)
+- Employee workspace for users, files, exports, and policies
+- JWT authentication with role-based permissions
+- Automatic region/IP detection for audit context
+- Cloudinary storage for uploaded files
+- One-click JSON export of audit logs
+
+Default local URLs:
+
+| App | URL |
 |---|---|
-| ![Dashboard placeholder](docs/screenshots/dashboard.png) | ![Upload placeholder](docs/screenshots/upload.png) |
+| Frontend | `http://localhost:5173` |
+| Backend | `http://localhost:8080` |
+| Health | `http://localhost:8080/health` |
+| API base | `http://localhost:8080/api/v1` |
 
 ---
 
-## Tech Stack
+## Tech stack
 
-### Frontend
+### Frontend (`client/`)
+
 - React + Vite + TypeScript
 - React Router (lazy routes)
 - TanStack Query
@@ -28,78 +63,85 @@ Think internal ops console — closer to Datadog / Cloudflare / AWS Console than
 - React Hook Form + Zod
 - Zustand
 - Tailwind CSS v4
-- shadcn/ui-style primitives + Lucide
+- Lucide icons + shadcn-style UI primitives
 
-### Backend
-- Node.js + Express + TypeScript
+### Backend (`server/`)
+
+- Node.js + Express 5 + TypeScript
 - MongoDB Atlas + Mongoose
-- Zod request validation
-- Winston + Morgan logging
+- Zod validation
+- JWT + bcrypt
+- Winston + Morgan
 - Helmet, CORS, rate limiting, compression, HPP, mongo sanitize
+- Cloudinary SDK for file uploads/downloads
 
 ### Deployment targets
+
 - Frontend → Vercel
-- Backend → Render
+- Backend → Render (`render.yaml`)
 - Database → MongoDB Atlas
+- Files → Cloudinary
 
 ---
 
 ## Architecture
 
 ```text
-Browser (React)
-  └─ TanStack Query / Axios
-       └─ REST /api/v1/*
+Browser (React + TanStack Query + Axios)
+  └─ REST /api/v1/*
+       └─ Routes + middlewares (auth, validate, rate limit)
             └─ Controllers
-                 └─ Services
-                      └─ Repositories
-                           └─ MongoDB (security_logs)
+                 └─ Services (domain + audit)
+                      └─ Repositories / models
+                           └─ MongoDB + Cloudinary
 ```
 
-### Why this layering
+### Backend layering
 
-| Layer | Responsibility | Why |
-|---|---|---|
-| Routes | HTTP wiring + middleware | Keeps transport concerns isolated |
-| Controllers | Status codes + response shaping | No DB, no business rules |
-| Services | Validation orchestration + domain rules | Testable without Express |
-| Repositories | Query construction + persistence | Swappable data access |
-| Validators | Zod schemas at the boundary | Never trust client input |
+| Layer | Responsibility |
+|---|---|
+| Routes | HTTP wiring, authz, validators |
+| Controllers | Status codes and response shaping |
+| Services | Business rules, audit events, Cloudinary/export logic |
+| Repositories | Query construction and persistence |
+| Validators | Zod schemas at every request boundary |
 
-### Frontend state split
+### Frontend state
 
-- **Server state** → TanStack Query (`logs`, `summary`, detail)
-- **URL/query UX state** → Zustand filter store (search/filters/page/sort)
-- **UI chrome** → Zustand persisted preferences (sidebar)
+| Concern | Store |
+|---|---|
+| Server data (logs, users, files) | TanStack Query |
+| Dashboard filters / pagination | Zustand `logFiltersStore` |
+| Auth session | Zustand `authStore` (persisted) |
+| UI chrome (sidebar) | Zustand `uiStore` |
 
-Search / filter / sort / pagination are **never** applied in the browser against a full dataset. The client only renders the page returned by the API.
+Search, filter, sort, and pagination are executed on the API. The browser only renders the current page.
 
 ---
 
-## Folder Structure
+## Repository structure
 
 ```text
 gidy/
-├── client/                 # Vite React SPA
+├── client/                     # Vite React SPA
 │   ├── src/
-│   │   ├── api/            # Axios client + resource APIs
-│   │   ├── components/     # UI primitives + DataTable + shared
-│   │   ├── features/       # Domain feature modules (logs)
-│   │   ├── hooks/          # Query + debounce hooks
-│   │   ├── layouts/        # App shell
-│   │   ├── pages/          # Route-level screens
-│   │   ├── providers/      # Query client, error boundary, toasts
-│   │   ├── routes/         # Lazy route tree
-│   │   ├── stores/         # Zustand stores
+│   │   ├── api/                # HTTP client + resource APIs
+│   │   ├── components/         # UI primitives + shared components
+│   │   ├── features/logs/      # Dashboard filters + table
+│   │   ├── hooks/
+│   │   ├── layouts/            # App shell + employee workspace
+│   │   ├── pages/              # Route screens (auth, dashboard, employees)
+│   │   ├── providers/
+│   │   ├── routes/
+│   │   ├── stores/
 │   │   ├── constants/
 │   │   ├── lib/
-│   │   ├── types/
-│   │   └── test/           # Test architecture notes
+│   │   └── types/
 │   ├── vercel.json
 │   └── .env.example
-├── server/                 # Express API
+├── server/                     # Express API
 │   ├── src/
-│   │   ├── config/
+│   │   ├── config/             # env + Cloudinary
 │   │   ├── constants/
 │   │   ├── controllers/
 │   │   ├── database/
@@ -107,13 +149,13 @@ gidy/
 │   │   ├── middlewares/
 │   │   ├── models/
 │   │   ├── repositories/
-│   │   ├── routes/
-│   │   ├── scripts/        # seed + sample generator
+│   │   ├── routes/v1/
+│   │   ├── scripts/            # seed, seed:admin, sample generator
 │   │   ├── services/
 │   │   ├── types/
 │   │   ├── utils/
 │   │   └── validators/
-│   ├── tests/              # Test architecture notes
+│   ├── uploads/                # local fallback storage (gitignored)
 │   └── .env.example
 ├── render.yaml
 └── README.md
@@ -121,11 +163,46 @@ gidy/
 
 ---
 
-## Domain Model
+## Features
 
-Collection: `security_logs`
+### Dashboard
 
-Matches the assignment contract (flat document):
+- Summary cards (total, severity, status aggregates)
+- Debounced multi-field search
+- Filters: role, severity, status, action, resource type, region, date range
+- Sortable columns + pagination
+- Log detail route
+
+### Bulk upload
+
+- Drag/drop or choose `.json`
+- Paste payload editor
+- Sample insert + sample download
+- Per-row validation report (valid / invalid / inserted)
+
+### Auth
+
+- Register (creates `user` role, auto region)
+- Login / logout
+- Session revalidation via `/auth/me`
+- Password policy (length, upper, lower, number, special)
+
+### Employee workspace
+
+| Area | Capabilities |
+|---|---|
+| Users | Admin create/edit/delete with audited actions |
+| Files | Real upload/download via Cloudinary |
+| Exports | Download audit logs as JSON |
+| Policies | Read/update security policies |
+
+---
+
+## Domain model
+
+### Security logs (`security_logs`)
+
+Flat document matching the assignment contract:
 
 ```json
 {
@@ -142,34 +219,34 @@ Matches the assignment contract (flat document):
 }
 ```
 
-| Field | Notes |
+| Field | Allowed values / notes |
 |---|---|
-| `actor` | Actor email |
-| `role` | `admin \| user \| viewer \| service \| auditor` |
-| `action` | SCREAMING_SNAKE action enum (`DELETE_USER`, …) |
-| `resource` | Resource path/identifier |
-| `resourceType` | `USER \| FILE \| API_KEY \| …` |
-| `ipAddress` / `region` | Network context |
-| `severity` | `CRITICAL \| HIGH \| MEDIUM \| LOW \| INFO` |
-| `status` | `Unresolved \| Investigating \| Resolved \| Dismissed` |
-| `timestamp` | Event time (indexed) |
-| `createdAt` / `updatedAt` | Ingestion metadata |
+| `actor` | Email |
+| `role` | `admin`, `user`, `viewer`, `service`, `auditor` |
+| `action` | `LOGIN`, `LOGOUT`, `CREATE_USER`, `UPDATE_USER`, `DELETE_USER`, `READ_RESOURCE`, `UPDATE_RESOURCE`, `DELETE_RESOURCE`, `UPLOAD_FILE`, `DOWNLOAD_FILE`, `EXPORT_DATA`, `CONFIGURE_POLICY`, `ACCESS_DENIED` |
+| `resourceType` | `USER`, `FILE`, `API_KEY`, `DATABASE`, `BUCKET`, `SERVER`, `POLICY`, `SESSION` |
+| `severity` | `CRITICAL`, `HIGH`, `MEDIUM`, `LOW`, `INFO` |
+| `status` | `Unresolved`, `Investigating`, `Resolved`, `Dismissed` |
+| `region` | AWS-style region codes (e.g. `ap-south-1`) |
 
-### Indexes
+Indexes cover timestamp, severity, status, role, action, resourceType, region, plus compound and text indexes.
 
-- `timestamp`, `severity`, `status`, `region`, `role`, `action`, `resourceType`
-- Compound: `(timestamp, severity)`, `(status, timestamp)`, `(role, timestamp)`, `(action, timestamp)`, `(resourceType, timestamp)`
-- Text index across actor, action, resource, IP, region, status
+### Users (`users`)
 
-Regex search is used for predictable partial matching across fields; text index remains available for ranking/evolution.
+- `name`, `email`, `passwordHash`, `role`, `region`, `status`, `lastLoginAt`
+
+### Files (`file_assets`)
+
+- Metadata in MongoDB
+- Binary content in Cloudinary (`cloudinaryPublicId`, `cloudinaryUrl`)
 
 ---
 
-## API
+## API reference
 
 Base path: `/api/v1`
 
-Envelope:
+Success envelope:
 
 ```json
 {
@@ -187,24 +264,45 @@ Envelope:
 }
 ```
 
-### Endpoints
+### Core
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `GET` | `/health` | No | Liveness + DB status |
+| `GET` | `/api/v1/logs` | No | List logs (query filters) |
+| `GET` | `/api/v1/logs/summary` | No | Dashboard aggregates |
+| `GET` | `/api/v1/logs/:id` | No | Single log |
+| `POST` | `/api/v1/logs/upload` | No | Bulk upload (`records[]`) |
+
+### Auth
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/health` | Liveness + DB state |
-| `GET` | `/api/v1/logs` | List with search/filter/sort/pagination |
-| `GET` | `/api/v1/logs/summary` | Dashboard aggregates |
-| `GET` | `/api/v1/logs/:id` | Single log |
-| `POST` | `/api/v1/logs/upload` | Bulk upload (`records[]`, max 10,000) |
-| `POST` | `/api/v1/auth/register` | Create employee account (`user` role) |
-| `POST` | `/api/v1/auth/login` | Login and receive JWT |
-| `GET` | `/api/v1/auth/me` | Current authenticated user |
-| `POST` | `/api/v1/auth/logout` | Logout (audited) |
-| `GET/POST/PATCH/DELETE` | `/api/v1/users` | Role-gated user management |
-| `GET/POST` | `/api/v1/files` | File list/upload (audited) |
-| `POST` | `/api/v1/files/:id/download` | Authorize download (audited) |
-| `POST` | `/api/v1/exports` | Create data export (audited) |
-| `GET/PATCH` | `/api/v1/policies` | Read/update security policies (audited) |
+| `POST` | `/api/v1/auth/register` | Create account |
+| `POST` | `/api/v1/auth/login` | Issue JWT |
+| `GET` | `/api/v1/auth/me` | Current user |
+| `POST` | `/api/v1/auth/logout` | Audited logout |
+
+### Workspace (JWT + permission)
+
+| Method | Path | Permission |
+|---|---|---|
+| `GET/POST/PATCH/DELETE` | `/api/v1/users` | `user:read/create/update/delete` |
+| `GET/POST` | `/api/v1/files` | `file:read/upload` |
+| `GET` | `/api/v1/files/:id/download` | `file:download` |
+| `POST` | `/api/v1/exports` | `export:create` |
+| `GET` | `/api/v1/exports/download` | `export:create` |
+| `GET/PATCH` | `/api/v1/policies` | `policy:read/update` |
+| `GET` | `/api/v1/geo/region` | Detected region metadata |
+| `GET/POST` | `/api/v1/actions` | Employee action catalog / execute |
+
+### List logs query params
+
+`page`, `pageSize`, `sortBy`, `sortOrder`, `search`, `role`, `severity`, `status`, `action`, `resourceType`, `region`, `dateFrom`, `dateTo`
+
+---
+
+## Authentication and RBAC
 
 ### Demo admin
 
@@ -212,80 +310,37 @@ Envelope:
 cd server && npm run seed:admin
 ```
 
-Default credentials: `admin@company.com` / `Admin123!`
+Credentials:
 
-### List query parameters
+- Email: `admin@company.com`
+- Password: `Admin123!`
 
-`page`, `pageSize`, `sortBy`, `sortOrder`, `search`, `role`, `severity`, `status`, `action`, `resourceType`, `region`, `dateFrom`, `dateTo`
+`seed:admin` creates or resets the demo admin password.
 
-### Bulk upload behavior
+### Role permissions (summary)
 
-1. Request body validated (`records` array size limits)
-2. Every record validated independently with Zod
-3. Valid records inserted in 1,000-document chunks (`ordered: false`)
-4. Invalid records returned in a capped failure report (first 100)
-5. If **all** records are invalid → `422` with detailed errors
-6. Partial success → `201` with inserted counts + failure details
-
-Example:
-
-```bash
-curl -X POST "$API/api/v1/logs/upload" \
-  -H 'Content-Type: application/json' \
-  -d @sample-upload-1000.json
-```
-
----
-
-## Security Decisions
-
-Aligned with OWASP Top 10 practical controls:
-
-| Threat | Control |
+| Role | Notable access |
 |---|---|
-| NoSQL injection | `express-mongo-sanitize`, strict Zod schemas, no raw operator passthrough |
-| XSS | React escaping + security response headers via Helmet |
-| CSRF | Stateless JSON API; tighten further if cookie auth is introduced |
-| Brute force / abuse | Global + upload-specific rate limits |
-| Malformed JSON | Express entity parse handling → `400` |
-| Large payload / upload DoS | Body size limit (`5mb`) + max 10,000 records |
-| Parameter pollution | `hpp` |
-| Mass assignment | `.strict()` Zod objects; only allowlisted fields persist |
-| Prototype pollution | Strict parsing + sanitized keys |
-| Information disclosure | Central error handler; no stack traces / Mongo internals in production |
-| CORS misuse | Explicit allowlist from `CORS_ORIGIN` |
+| `admin` | Full permissions |
+| `auditor` | Read users/files/policies, export, download |
+| `user` | Read users, update self, upload/download files, export |
+| `viewer` | Read-only |
+| `service` | File + export automation style access |
 
-Additional hardening: compression, `trust proxy`, disabled `X-Powered-By`, request logging, operational vs non-operational error classification.
+Password rules for register / create user:
+
+- Min 8 characters
+- Uppercase + lowercase + number + special character
 
 ---
 
-## Performance Decisions
-
-- Lean queries + field projection for list/detail
-- Compound indexes matching common filter/sort patterns
-- Parallel `find` + `countDocuments` for list responses
-- Chunked `insertMany` for bulk ingestion
-- Aggregation only for dashboard summary cards
-- Frontend request debouncing for search (does not move filtering client-side)
-- Lazy-loaded routes + skeleton loaders for perceived performance
-
-### Trade-offs
-
-| Decision | Trade-off |
-|---|---|
-| Offset pagination (`skip/limit`) | Simple + assignment-friendly; deep pages get slower — cursor pagination is the scale upgrade |
-| Regex multi-field search | Flexible partial match; heavier than pure text search at very large scale |
-| Partial bulk success | Better operator UX; callers must handle mixed validity reports |
-| Estimated counts for summary total | Fast on huge collections; slightly approximate vs exact count |
-
----
-
-## Local Setup
+## Local setup
 
 ### Prerequisites
 
-- Node.js **20.19+** (repo `.nvmrc` → 22)
-- MongoDB Atlas connection string (or local Mongo)
+- Node.js **20.19+** (recommended: Node 22 via `.nvmrc`)
+- MongoDB Atlas URI (or local Mongo)
+- Cloudinary account (for file upload/download)
 
 ```bash
 nvm use
@@ -296,24 +351,23 @@ nvm use
 ```bash
 cd server
 cp .env.example .env
-# set MONGODB_URI and CORS_ORIGIN
+```
+
+Edit `.env` and set at least:
+
+- `MONGODB_URI`
+- `CORS_ORIGIN=http://localhost:5173`
+- `JWT_SECRET` (32+ chars)
+- Cloudinary values (`CLOUDINARY_URL` or cloud name + key + secret)
+
+```bash
 npm install
+npm run seed:admin
+npm run seed -- 1000
 npm run dev
 ```
 
-API defaults to `http://localhost:8080`.
-
-Seed data:
-
-```bash
-npm run seed -- 1000
-```
-
-Generate a bulk upload file (up to 10000):
-
-```bash
-npm run generate:sample -- 10000 ./sample-upload-10000.json
-```
+API: `http://localhost:8080`
 
 ### 2) Frontend
 
@@ -324,9 +378,187 @@ npm install
 npm run dev
 ```
 
-App defaults to `http://localhost:5173`.
+App: `http://localhost:5173`
 
-`VITE_API_BASE_URL` can point at the Render API in deployed environments. Locally, Vite proxies `/api` and `/health` to the backend.
+`VITE_API_BASE_URL` should point to `http://localhost:8080/api/v1`.
+Vite also proxies `/api` and `/health` to the backend for same-origin usage.
+
+### Optional: generate bulk upload sample
+
+```bash
+cd server
+npm run generate:sample -- 1000 ./sample-upload-1000.json
+```
+
+---
+
+## Environment variables
+
+### Server (`server/.env`)
+
+| Variable | Purpose |
+|---|---|
+| `NODE_ENV` | `development` / `production` |
+| `PORT` | API port (default `8080`) |
+| `MONGODB_URI` | Mongo connection string |
+| `CORS_ORIGIN` | Allowed origins (comma-separated) |
+| `LOG_LEVEL` | Winston level |
+| `RATE_LIMIT_WINDOW_MS` | Rate limit window |
+| `RATE_LIMIT_MAX` | General request max |
+| `UPLOAD_RATE_LIMIT_MAX` | Bulk upload max |
+| `BODY_LIMIT` | JSON body size (default `5mb`) |
+| `UPLOAD_MAX_RECORDS` | Max records per bulk upload |
+| `JWT_SECRET` | JWT signing secret |
+| `JWT_EXPIRES_IN` | Token lifetime (e.g. `8h`) |
+| `CLOUDINARY_URL` | `cloudinary://<key>:<secret>@<cloud_name>` |
+| `CLOUDINARY_CLOUD_NAME` | Cloud name |
+| `CLOUDINARY_API_KEY` | API key |
+| `CLOUDINARY_API_SECRET` | API secret |
+
+### Client (`client/.env`)
+
+| Variable | Purpose |
+|---|---|
+| `VITE_API_BASE_URL` | API base, e.g. `http://localhost:8080/api/v1` |
+
+Never commit real secrets. `server/.env` is gitignored.
+
+---
+
+## Scripts
+
+### Root
+
+| Script | Description |
+|---|---|
+| `npm run dev:server` | Start API |
+| `npm run dev:client` | Start Vite |
+| `npm run build` | Build both apps |
+| `npm run typecheck` | Typecheck both apps |
+| `npm run seed` | Seed logs |
+
+### Server
+
+| Script | Description |
+|---|---|
+| `npm run dev` | `tsx watch` API |
+| `npm run build` | Compile TypeScript |
+| `npm run start` | Run compiled `dist` |
+| `npm run seed` | Seed security logs |
+| `npm run seed:admin` | Seed/reset demo admin |
+| `npm run generate:sample` | Generate bulk JSON file |
+
+### Client
+
+| Script | Description |
+|---|---|
+| `npm run dev` | Vite dev server |
+| `npm run build` | Production build |
+| `npm run preview` | Preview build |
+
+---
+
+## Bulk upload format
+
+Request body:
+
+```json
+{
+  "records": [
+    {
+      "actor": "priya.nair@company.com",
+      "role": "admin",
+      "action": "DELETE_USER",
+      "resource": "/api/users/334",
+      "resourceType": "USER",
+      "ipAddress": "192.168.1.45",
+      "region": "ap-south-1",
+      "severity": "HIGH",
+      "status": "Unresolved",
+      "timestamp": "2025-06-14T08:32:11Z"
+    }
+  ]
+}
+```
+
+A bare JSON array is also accepted by the UI (it wraps into `{ records: [...] }`).
+
+Behavior:
+
+1. Array size validated (max 10,000)
+2. Each record validated independently
+3. Valid rows inserted in chunks of 1,000
+4. Invalid rows returned in a capped failure report
+5. If all rows invalid → `422`
+6. Partial success → `201` with counts + failures
+
+---
+
+## Files and Cloudinary
+
+Upload flow:
+
+1. Browser reads file as base64 (max 2 MB)
+2. API validates metadata + content
+3. File is uploaded to Cloudinary (`resource_type: auto`)
+4. Metadata stored in MongoDB
+5. `UPLOAD_FILE` audit event written
+
+Download flow:
+
+1. Authenticated `GET /api/v1/files/:id/download`
+2. Server fetches bytes from Cloudinary URL
+3. Response streamed with `Content-Disposition: attachment`
+4. `DOWNLOAD_FILE` audit event written
+
+Files uploaded before Cloudinary integration may not download; re-upload them once.
+
+---
+
+## Exports
+
+From **Employees → Exports**:
+
+- Click **Export logs (JSON)**
+- Browser downloads `gidy-security-logs-YYYY-MM-DD.json`
+- Payload includes export metadata + `records[]`
+- `EXPORT_DATA` audit event is written
+
+Endpoint: `GET /api/v1/exports/download` (requires `export:create`).
+
+---
+
+## Security controls
+
+| Threat | Control |
+|---|---|
+| NoSQL injection | mongo sanitize + Zod strict schemas + trusted operators only in server-built filters |
+| XSS | React escaping + Helmet headers |
+| Auth abuse | JWT bearer auth, bcrypt passwords, inactive-account checks |
+| Brute force / abuse | Global + upload rate limits |
+| Oversized payloads | Body limit + max upload records + file size cap |
+| Parameter pollution | HPP |
+| Mass assignment | Zod `.strict()` objects |
+| CORS misuse | Explicit origin allowlist |
+| Secret leakage | Central error handler; no stacks in production responses |
+
+Additional hardening: compression, `trust proxy`, disabled `X-Powered-By`, request logging, operational vs non-operational error classification.
+
+---
+
+## Performance notes
+
+- Lean queries + projections for list endpoints
+- Compound indexes aligned to filter/sort patterns
+- Parallel find + count for paginated lists
+- Chunked `insertMany` for bulk ingestion
+- Debounced search on the client (filtering still server-side)
+- Lazy-loaded routes and skeleton loaders
+
+Trade-offs:
+
+- Offset pagination is simple and assignment-friendly; deep pages are slower than cursor pagination
+- Regex multi-field search is flexible; Atlas Search is the high-scale upgrade path
 
 ---
 
@@ -335,8 +567,8 @@ App defaults to `http://localhost:5173`.
 ### MongoDB Atlas
 
 1. Create cluster + database user
-2. Allow Render egress IPs (or `0.0.0.0/0` for demo)
-3. Copy SRV URI into `MONGODB_URI`
+2. Allow Render egress (or `0.0.0.0/0` for demos)
+3. Put SRV URI in `MONGODB_URI`
 
 ### Backend (Render)
 
@@ -346,64 +578,39 @@ App defaults to `http://localhost:5173`.
 - Health check: `/health`
 - Blueprint: `render.yaml`
 
-Required env vars:
+Required production env vars:
 
 - `MONGODB_URI`
-- `CORS_ORIGIN` (your Vercel URL, comma-separated if multiple)
+- `CORS_ORIGIN` (Vercel URL)
+- `JWT_SECRET`
 - `NODE_ENV=production`
-- `PORT` (Render usually injects this; app reads `PORT`)
+- Cloudinary credentials
 
 ### Frontend (Vercel)
 
 - Root directory: `client`
-- Framework preset: Vite
+- Framework: Vite
 - Build: `npm run build`
 - Output: `dist`
 - Env: `VITE_API_BASE_URL=https://<your-render-service>/api/v1`
-- SPA fallback configured via `vercel.json`
+- SPA fallback via `vercel.json`
 
 ---
 
-## Product Features
+## Troubleshooting
 
-- Dashboard summary cards
-- Debounced multi-field search (server-side)
-- Filters: role, severity, status, action, resource type, region, date range
-- Sortable columns
-- Pagination + page size controls
-- Reusable DataTable (sticky header, badges, loading/empty states)
-- Bulk JSON upload with validation report
-- Responsive desktop / tablet / mobile shell
-- Global toasts + error boundary + 404 page
-- Dark-mode-ready token architecture (CSS variables)
-
----
-
-## Interview Notes / Defendable Decisions
-
-1. **Server owns query semantics** — prevents inconsistent client filtering and protects data volume.
-2. **Zod at every boundary** — query, params, body, and each upload row.
-3. **Repository isolation** — controllers never touch Mongoose.
-4. **Operational error model** — clients get stable codes/messages; logs keep diagnostics.
-5. **Chunked bulk write** — keeps memory predictable at 10k records.
-6. **Feature-folder frontend** — scales to many domains without a junk drawer.
-7. **shadcn-style primitives** — accessible building blocks without locking the product into a heavy component framework.
-
----
-
-## Future Improvements
-
-- Cursor-based pagination for deep scans
-- AuthN/AuthZ (SSO + RBAC) and audit of dashboard users themselves
-- OpenAPI/Swagger generation from Zod schemas
-- Vitest unit + integration suites in CI
-- Atlas Search for high-scale full-text
-- Streamed uploads / signed object ingestion for >10k
-- Saved views and alert rules
-- Metric export (Prometheus) and structured trace IDs
+| Symptom | Likely fix |
+|---|---|
+| Frontend cannot reach API | Check `VITE_API_BASE_URL` and `CORS_ORIGIN` |
+| Login fails for demo admin | Run `npm run seed:admin` |
+| Create user returns 401 | Stale JWT; log out and sign in again |
+| Date filter errors | Ensure Date From ≤ Date To |
+| File download fails on old rows | Re-upload after Cloudinary setup |
+| Bulk upload validation failures | Match enum values and email/IP/timestamp formats exactly |
+| Cloudinary upload fails | Verify `CLOUDINARY_*` env vars and restart API |
 
 ---
 
 ## License
 
-Private assignment / portfolio project — all rights reserved by the author unless otherwise stated.
+Private assignment / portfolio project. All rights reserved by the author unless otherwise stated.

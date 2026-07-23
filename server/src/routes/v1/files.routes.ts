@@ -28,7 +28,7 @@ filesRouter.post(
   asyncHandler(fileController.uploadFile),
 );
 
-filesRouter.post(
+filesRouter.get(
   '/:id/download',
   authorize(PERMISSIONS.FILE_DOWNLOAD),
   validateRequest({ params: resourceIdParamsSchema }),

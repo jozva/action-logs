@@ -16,4 +16,10 @@ exportsRouter.post(
   asyncHandler(exportController.createExport),
 );
 
+exportsRouter.get(
+  '/download',
+  authorize(PERMISSIONS.EXPORT_CREATE),
+  asyncHandler(exportController.downloadExport),
+);
+
 export { exportsRouter };

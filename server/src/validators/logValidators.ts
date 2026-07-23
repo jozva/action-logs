@@ -11,6 +11,7 @@ import {
   LOG_SORT_FIELDS,
   LOG_STATUSES,
   MAX_PAGE_SIZE,
+  REGIONS,
   RESOURCE_TYPES,
   SEVERITIES,
   SORT_ORDERS,
@@ -84,7 +85,7 @@ export const listLogsQuerySchema = z
     status: optionalEnum(LOG_STATUSES),
     action: optionalEnum(ACTIONS),
     resourceType: optionalEnum(RESOURCE_TYPES),
-    region: optionalTrimmedString(2, 64),
+    region: optionalEnum(REGIONS),
     dateFrom: optionalDate,
     dateTo: optionalDate,
   })

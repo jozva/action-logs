@@ -6,6 +6,22 @@ export const ACTOR_ROLES = [
   'auditor',
 ] as const;
 
+export const REGIONS = [
+  'ap-south-1',
+  'ap-southeast-1',
+  'ap-southeast-2',
+  'ap-northeast-1',
+  'ap-northeast-2',
+  'eu-west-1',
+  'eu-west-2',
+  'eu-west-3',
+  'eu-central-1',
+  'us-east-1',
+  'us-west-2',
+  'sa-east-1',
+  'me-central-1',
+] as const;
+
 export const SEVERITIES = [
   'CRITICAL',
   'HIGH',

@@ -54,8 +54,9 @@ export async function logout(req: Request, res: Response): Promise<Response> {
     throw new UnauthorizedError();
   }
 
+  const detected = await resolveRequestRegionMeta(req);
   const result = await authService.logoutAccount(req.user, {
-    ipAddress: resolveRequestIp(req),
+    ipAddress: detected.ipAddress || resolveRequestIp(req),
   });
 
   return sendSuccess(res, result, 'Logged out successfully');

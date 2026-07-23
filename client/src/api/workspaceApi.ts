@@ -1,4 +1,8 @@
 import { httpClient } from '@/api/httpClient'
+import {
+  filenameFromContentDisposition,
+  triggerBrowserDownload,
+} from '@/lib/download'
 import type { ApiSuccessResponse } from '@/types/api'
 
 export interface FileAsset {
@@ -8,6 +12,7 @@ export interface FileAsset {
   sizeBytes: number
   ownerEmail: string
   storageKey: string
+  cloudinaryUrl?: string
   createdAt: string
 }
 
@@ -26,7 +31,9 @@ export interface ExportResult {
   recordCount: number
   requestedBy: string
   createdAt: string
-  downloadPath: string
+  truncated?: boolean
+  filename?: string
+  records?: unknown[]
 }
 
 export async function fetchFiles() {
@@ -38,22 +45,40 @@ export async function uploadFile(payload: {
   name: string
   mimeType: string
   sizeBytes: number
+  contentBase64: string
 }) {
   const response = await httpClient.post<ApiSuccessResponse<FileAsset>>('/files', payload)
   return response.data.data
 }
 
-export async function downloadFile(id: string) {
-  const response = await httpClient.post<
-    ApiSuccessResponse<{ file: FileAsset; downloadToken: string; message: string }>
-  >(`/files/${id}/download`)
-  return response.data.data
+export async function downloadFile(id: string, fallbackName = 'download.bin') {
+  const response = await httpClient.get<Blob>(`/files/${id}/download`, {
+    responseType: 'blob',
+  })
+  const filename = filenameFromContentDisposition(
+    response.headers['content-disposition'] as string | undefined,
+    fallbackName,
+  )
+  triggerBrowserDownload(response.data, filename)
+  return { filename }
 }
 
 export async function createExport() {
   const response =
     await httpClient.post<ApiSuccessResponse<ExportResult>>('/exports')
   return response.data.data
+}
+
+export async function downloadExportJson() {
+  const response = await httpClient.get<Blob>('/exports/download', {
+    responseType: 'blob',
+  })
+  const filename = filenameFromContentDisposition(
+    response.headers['content-disposition'] as string | undefined,
+    `gidy-security-logs-${new Date().toISOString().slice(0, 10)}.json`,
+  )
+  triggerBrowserDownload(response.data, filename)
+  return { filename }
 }
 
 export async function fetchPolicies() {

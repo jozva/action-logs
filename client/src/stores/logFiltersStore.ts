@@ -7,15 +7,18 @@ import {
   type ActorRole,
   type LogSortField,
   type LogStatus,
+  type RegionCode,
   type ResourceType,
   type Severity,
   type SortOrder,
 } from '@/constants/logs'
+import { normalizeDateRange } from '@/lib/dateRange'
 import type { LogFilters } from '@/types/logs'
 
 interface LogFiltersState extends LogFilters {
   setSearch: (search: string) => void
   setFilter: <K extends keyof LogFilters>(key: K, value: LogFilters[K]) => void
+  setDateFilter: (key: 'dateFrom' | 'dateTo', value: string) => void
   setSort: (sortBy: LogSortField, sortOrder?: SortOrder) => void
   setPage: (page: number) => void
   setPageSize: (pageSize: number) => void
@@ -47,6 +50,14 @@ export const useLogFiltersStore = create<LogFiltersState>((set) => ({
       [key]: value,
       page: key === 'page' ? (value as number) : DEFAULT_PAGE,
     })),
+  setDateFilter: (key, value) =>
+    set((state) => ({
+      ...normalizeDateRange(key, value, {
+        dateFrom: state.dateFrom,
+        dateTo: state.dateTo,
+      }),
+      page: DEFAULT_PAGE,
+    })),
   setSort: (sortBy, sortOrder) =>
     set((state) => ({
       sortBy,
@@ -66,6 +77,7 @@ export type FilterSelectKey =
   | 'status'
   | 'action'
   | 'resourceType'
+  | 'region'
 
 export type FilterSelectValue =
   | ActorRole
@@ -73,4 +85,5 @@ export type FilterSelectValue =
   | LogStatus
   | ActionType
   | ResourceType
+  | RegionCode
   | ''

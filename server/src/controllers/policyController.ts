@@ -3,7 +3,7 @@ import type { Request, Response } from 'express';
 import { BadRequestError, UnauthorizedError } from '../errors/AppError.js';
 import * as policyService from '../services/policyService.js';
 import { sendSuccess } from '../utils/apiResponse.js';
-import { resolveRequestIp } from '../utils/requestMeta.js';
+import { resolveRequestIp, resolveRequestRegionMeta } from '../utils/requestMeta.js';
 
 export async function listPolicies(req: Request, res: Response): Promise<Response> {
   if (!req.user) throw new UnauthorizedError();
@@ -20,8 +20,9 @@ export async function updatePolicy(req: Request, res: Response): Promise<Respons
     throw new BadRequestError('Missing policy update payload');
   }
 
+  const detected = await resolveRequestRegionMeta(req);
   const policy = await policyService.updatePolicy(req.user, policyId, body.enabled, {
-    ipAddress: resolveRequestIp(req),
+    ipAddress: detected.ipAddress || resolveRequestIp(req),
   });
 
   return sendSuccess(res, policy, 'Policy updated');

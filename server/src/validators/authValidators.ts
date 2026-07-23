@@ -5,7 +5,11 @@ import { ACTOR_ROLES } from '../constants/logs.js';
 const passwordSchema = z
   .string()
   .min(8, 'Password must be at least 8 characters')
-  .max(72, 'Password must be at most 72 characters');
+  .max(72, 'Password must be at most 72 characters')
+  .regex(/[a-z]/, 'Password must include a lowercase letter')
+  .regex(/[A-Z]/, 'Password must include an uppercase letter')
+  .regex(/\d/, 'Password must include a number')
+  .regex(/[^A-Za-z0-9]/, 'Password must include a special character');
 
 export const registerSchema = z
   .object({

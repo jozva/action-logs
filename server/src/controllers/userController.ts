@@ -48,8 +48,9 @@ export async function updateUser(req: Request, res: Response): Promise<Response>
     throw new BadRequestError('Missing user update payload');
   }
 
+  const detected = await resolveRequestRegionMeta(req);
   const user = await userService.updateUserAsActor(actor, userId, body, {
-    ipAddress: resolveRequestIp(req),
+    ipAddress: detected.ipAddress || resolveRequestIp(req),
   });
 
   return sendSuccess(res, user, 'User updated');
@@ -62,8 +63,9 @@ export async function deleteUser(req: Request, res: Response): Promise<Response>
     throw new BadRequestError('Missing user id');
   }
 
+  const detected = await resolveRequestRegionMeta(req);
   const user = await userService.deleteUserAsAdmin(actor, userId, {
-    ipAddress: resolveRequestIp(req),
+    ipAddress: detected.ipAddress || resolveRequestIp(req),
   });
 
   return sendSuccess(res, user, 'User deleted');

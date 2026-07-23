@@ -71,6 +71,15 @@ function resolveError(error: unknown): {
     'name' in error &&
     (error as { name?: string }).name === 'CastError'
   ) {
+    const castError = error as { path?: string; kind?: string; message?: string };
+    if (castError.path === 'timestamp' || castError.kind === 'date') {
+      return {
+        statusCode: HTTP_STATUS.BAD_REQUEST,
+        message: 'Invalid date filter value',
+        code: 'INVALID_DATE_FILTER',
+      };
+    }
+
     return {
       statusCode: HTTP_STATUS.BAD_REQUEST,
       message: 'Invalid identifier format',

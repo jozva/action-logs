@@ -60,7 +60,6 @@ export async function resolveRequestRegionMeta(req: Request): Promise<DetectedRe
   });
 }
 
-/** @deprecated Prefer resolveRequestRegionMeta for accurate detection */
 export function resolveRequestRegion(_req: Request, fallback?: string): string {
   return fallback || DEFAULT_ACTION_REGION;
 }

@@ -1,4 +1,4 @@
-import type { SortOrder as MongooseSortOrder } from 'mongoose';
+import mongoose, { type SortOrder as MongooseSortOrder } from 'mongoose';
 
 import type { LogSortField, SortOrder } from '../constants/logs.js';
 import { SecurityLogModel } from '../models/SecurityLog.js';
@@ -49,10 +49,10 @@ export function buildLogFilter(query: ListLogsQuery): LogFilter {
   if (query.region) filter.region = query.region;
 
   if (query.dateFrom || query.dateTo) {
-    filter.timestamp = {
+    filter.timestamp = mongoose.trusted({
       ...(query.dateFrom ? { $gte: query.dateFrom } : {}),
       ...(query.dateTo ? { $lte: query.dateTo } : {}),
-    };
+    });
   }
 
   const search = query.search?.trim();
