@@ -6,9 +6,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "tsx watch src/server.ts",
-    "build": "tsc -p tsconfig.json",
+    "build": "npx tsc -p tsconfig.json",
     "start": "node dist/server.js",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "npx tsc -p tsconfig.json --noEmit",
     "seed": "tsx src/scripts/seed.ts",
     "generate:sample": "tsx src/scripts/generateSampleUpload.ts",
     "seed:admin": "tsx src/scripts/seedAdmin.ts"
@@ -54,6 +54,6 @@
     "typescript": "^5.8.3"
   },
   "engines": {
-    "node": "^20.19.0"
+    "node": "^24.0.0"
   }
 }
