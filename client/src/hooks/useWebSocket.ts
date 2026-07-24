@@ -81,7 +81,7 @@ export function useWebSocket(options: WebSocketHookOptions) {
     });
 
     socket.on('disconnect', () => {
-      logger.info('WebSocket disconnected');
+      logger.info('');
     });
 
     socket.on('error', (error: unknown) => {
