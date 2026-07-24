@@ -29,11 +29,7 @@ export function useWebSocket(options: WebSocketHookOptions) {
 
     const baseUrl = clientEnv.apiBaseUrl.replace('/api/v1', '');
 
-    logger.info('Initializing WebSocket', {
-      baseUrl,
-      hasToken: Boolean(token),
-      hasUser: Boolean(user),
-    });
+
 
     const socket = io(baseUrl, {
       path: '/socket.io',
@@ -47,17 +43,11 @@ export function useWebSocket(options: WebSocketHookOptions) {
       },
     });
 
-    socket.on('connect', () => {
-      logger.info('WebSocket connected');
-    });
-
-    socket.on('authenticated', () => {
-      logger.info('WebSocket authenticated');
-    });
+ 
 
     socket.on('unauthorized', (data: { message?: string }) => {
       const message = data?.message ?? 'WebSocket unauthorized';
-      logger.warn('WebSocket unauthorized:', message);
+      logger.warn('');
       toast.error(message);
       socket.disconnect();
     });
@@ -65,7 +55,7 @@ export function useWebSocket(options: WebSocketHookOptions) {
     socket.on('connect_error', (error: unknown) => {
       logger.error('WebSocket connection error:', error);
       const message =
-        error instanceof Error ? error.message : 'WebSocket connection failed';
+        error instanceof Error ? error.message : '';
       toast.error(message);
     });
 
