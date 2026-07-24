@@ -14,25 +14,25 @@ class ClientLogger {
 
   debug(message: string, data?: unknown): void {
     if (this.shouldLog('debug')) {
-      console.debug('');
+      console.debug(`[DEBUG] ${message}`, data);
     }
   }
 
   info(message: string, data?: unknown): void {
     if (this.shouldLog('info')) {
-      console.info('');
+      console.info(`[INFO] ${message}`, data);
     }
   }
 
   warn(message: string, data?: unknown): void {
     if (this.shouldLog('warn')) {
-      console.warn('');
+      console.warn(`[WARN] ${message}`, data);
     }
   }
 
   error(message: string, data?: unknown): void {
     if (this.shouldLog('error')) {
-      console.error('');
+      console.error(`[ERROR] ${message}`, data);
     }
   }
 }
