@@ -5,6 +5,7 @@ import { clientEnv } from '@/lib/env';
 import { useAuthStore } from '@/stores/authStore';
 import { logger } from '@/lib/logger';
 
+
 interface WebSocketHookOptions {
   onLogsCreated?: (data: { logId: string; [key: string]: unknown }) => void;
   onLogsUpdated?: (data: { logId: string; [key: string]: unknown }) => void;
@@ -84,6 +85,7 @@ export function useWebSocket(options: WebSocketHookOptions) {
       logger.info('');
     });
 
+    
     socket.on('error', (error: unknown) => {
       logger.error('WebSocket error:', error);
     });
